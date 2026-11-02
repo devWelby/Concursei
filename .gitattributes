@@ -32,5 +32,5 @@ bin/console text eol=lf
 *.woff2 binary
 *.pdf   binary
 
-# Lockfile: não tentar mesclar manualmente.
-composer.lock -diff merge=binary linguist-generated=true
+# Lockfile: diff visível (revisão de cadeia de suprimentos), sem mesclagem automática.
+composer.lock text eol=lf merge=binary linguist-generated=true
