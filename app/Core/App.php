@@ -37,6 +37,13 @@ final class App
 
     /** @var list<Closure> */
     private array $consoleRegistrars = [];
+    /** @var list<string> middlewares globais adicionais (após sessão e CSRF) */
+    private array $globalMiddleware = [];
+
+    public function appendGlobalMiddleware(string $alias): void
+    {
+        $this->globalMiddleware[] = $alias;
+    }
 
     /** @param class-string<Middleware> $class */
     public function aliasMiddleware(string $alias, string $class): void
@@ -76,6 +83,7 @@ final class App
         $this->container->set(SecurityHeaders::class, $headers);
         /** @var View $view */
         $view = $this->container->get(View::class);
+        $view->resetShared();
         $view->share('cspNonce', $headers->nonce());
         $view->share('requestId', $requestId);
         $request = $request->withAttribute('request_id', $requestId);
@@ -84,7 +92,7 @@ final class App
         try {
             [$route, $params] = $this->router()->match($request->method(), $request->path());
             $request = $request->withRouteParams($params)->withAttribute('route', $route);
-            $stack = array_merge([$route->cache === 'public' ? 'session:lazy' : 'session', 'csrf'], $route->middleware);
+            $stack = array_merge([$route->cache === 'public' ? 'session:lazy' : 'session', 'csrf'], $this->globalMiddleware, $route->middleware);
             $response = $this->pipeline($stack, $request, fn (Request $r): Response => $this->dispatch($route, $r));
         } catch (Throwable $e) {
             $response = $this->renderException($e, $request, $requestId);

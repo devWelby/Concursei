@@ -41,6 +41,16 @@ final class KernelTest extends IntegrationTestCase
         self::assertSame($json->getHeader('X-Request-Id'), $body['error']['request_id']);
     }
 
+    public function testViewStateDoesNotLeakBetweenRequests(): void
+    {
+        $view = $this->app->container->get(\Concursei\Core\View\View::class);
+        $view->share('noindex', true);
+        $view->share('title', 'Dado da requisição anterior');
+        $body = $this->request('GET', '/')->body();
+        self::assertStringNotContainsString('noindex', $body);
+        self::assertStringNotContainsString('Dado da requisição anterior', $body);
+    }
+
     public function testHealthEndpoint(): void
     {
         $res = $this->request('GET', '/saude');

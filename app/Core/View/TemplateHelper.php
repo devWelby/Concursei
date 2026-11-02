@@ -21,6 +21,12 @@ final class TemplateHelper
     {
     }
 
+    /** Esquece flashes/entrada lidos na requisição anterior. */
+    public function reset(): void
+    {
+        $this->old = $this->errors = $this->flashes = null;
+    }
+
     public function csrfToken(): string
     {
         if (!$this->session->isStarted()) {

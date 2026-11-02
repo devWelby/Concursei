@@ -6,11 +6,13 @@ namespace Concursei\Core;
 
 use DateTimeImmutable;
 use DateTimeZone;
+use Psr\Clock\ClockInterface;
 
 /**
- * Fonte única de tempo (UTC). Testes usam setNow() para congelar o relógio.
+ * Fonte única de tempo (UTC), compatível com PSR-20 (usada também pelo TOTP).
+ * Testes usam setNow() para congelar o relógio.
  */
-class Clock
+class Clock implements ClockInterface
 {
     private ?DateTimeImmutable $frozen = null;
 

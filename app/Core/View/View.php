@@ -26,6 +26,18 @@ final class View
         $this->shared[$key] = $value;
     }
 
+    /**
+     * Descarta dados compartilhados da requisição anterior (mantém o helper $h).
+     * O mesmo processo pode atender várias requisições (testes, servidores persistentes).
+     */
+    public function resetShared(): void
+    {
+        $this->shared = array_intersect_key($this->shared, ['h' => true]);
+        if (($this->shared['h'] ?? null) instanceof TemplateHelper) {
+            $this->shared['h']->reset();
+        }
+    }
+
     public function shared(string $key, mixed $default = null): mixed
     {
         return $this->shared[$key] ?? $default;
