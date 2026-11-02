@@ -14,11 +14,14 @@ Atualizado em 2026-11-02. Situação real — nada aqui é declarado pronto sem 
 8. **Coletor seguro** (D-017) — cadastro de fontes (oficial/secundária) com allowlist de domínios; cliente HTTP anti-SSRF (DNS público, IP fixado, redirect revalidado, limite pós-descompressão); descoberta de PDFs em página; documentos fora do webroot por SHA-256; extração de texto de PDF/HTML.
 9. **Porta única de IA** (D-018) — adaptador REST Gemini com saída JSON estruturada; orçamento atômico diário/mensal em tokens e chamadas; circuit breaker; registro sem conteúdo; sem chave/modelo a IA fica indisponível (nada simulado).
 10. **Extração de edital com revisão humana** (D-019) — prompt `edital-v1`; evidência literal conferida no código para cada valor; cache por hash; tela de revisão com comparação ao rascunho; aplicação numa única edição versionada, só de fonte oficial, sem publicar nem marcar como conferido.
+11. **Páginas institucionais** — `/privacidade`, `/termos`, `/cookies`, `/sobre` e `/correcoes` (registro público de correções); identidade do responsável só do `.env`, com BootGuard bloqueando produção sem ela; links internos quebrados removidos do cabeçalho e verificados por teste.
+12. **Direitos do titular** (D-020) — `/conta/dados`: cópia dos dados em JSON e exclusão imediata por anonimização, ambas com senha, limite de tentativas e auditoria; CLI `user:delete` para pedidos recebidos pelo contato.
 
 ## Em andamento / próximos passos (ordem)
 
-1. Páginas institucionais (privacidade, termos, cookies, sobre, correções) — hoje o rodapé, o cadastro e a página de concurso apontam para elas, mas ainda não existem; exportação e exclusão de conta.
-2. Simulados, correção, contestação; mapa de estudo; planejador; alertas por e-mail (usarão os favoritos); CMS/SEO (sitemap, dados estruturados); P1.
+1. Simulados (geração via Gemini com a porta única de IA), correção reprodutível e contestação.
+2. Mapa de estudo; planejador (PDF/ICS); alertas por e-mail com opt-in (usarão os favoritos).
+3. CMS/SEO (sitemap, dados estruturados); slots de anúncio desligados até configuração e consentimento; backup/restauração e roteiro de deploy (OPERATIONS); checklist ASVS (SECURITY); P1.
 
 ## Cron previsto (HostGator)
 
@@ -35,10 +38,12 @@ Ela executa a agenda de `config/jobs.php`: `sources:dispatch-due` (15 min), `que
 - Credenciais Gemini e SMTP (sem SMTP configurado, cadastro e recuperação de senha ficam indisponíveis em produção, por desenho). Para a IA: escolher um modelo estável vigente (`GEMINI_MODEL`), conferir o limite de saída dele (`AI_EDITAL_MAX_OUTPUT_TOKENS`) e converter os tetos de tokens em reais pelo preço vigente.
 - Cadastrar as fontes oficiais reais (sites dos órgãos e bancas), respeitando os termos de uso de cada site.
 - Dados reais de concursos: o catálogo só tem dados fictícios de demonstração no banco local; o cadastro real depende da equipe conferir cada edital.
-- Textos jurídicos de Termos e Privacidade revisados por quem responde pelo site (as versões aceitas no cadastro estão em `config/legal.php`).
+- Textos jurídicos de Termos, Privacidade e Cookies revisados por quem responde pelo site (as versões aceitas no cadastro estão em `config/legal.php`; mudou o texto, incremente a versão).
+- Decisão jurídica sobre a guarda de registros de acesso (Marco Civil da Internet, art. 15: IP e horário por 6 meses). Hoje o site guarda só HMAC do IP nos eventos de segurança, o que pode não bastar para atender a uma ordem judicial.
+- Definir o prazo de retenção das cópias de segurança (a política de privacidade promete que contas excluídas não são restauradas a partir delas).
 - Confirmar na conta HostGator: versão PHP web/CLI, extensões, versão do banco, caminho do PHP CLI, frequência do Cron, raiz do domínio.
-- Identidade do operador (nome/contato) para privacidade e termos.
-- Autorização para `git push` ao remoto `origin` (github.com/devWelby/Concursei). O remoto está em `c142327`; os commits locais seguintes (CI, catálogo, fila, coletor, IA e extração) ainda não foram enviados, e a CI só roda no GitHub depois do envio.
+- Identidade do operador (`OPERATOR_NAME`, `CONTACT_EMAIL`): exibida em privacidade, termos e correções; sem ela a aplicação não sobe em produção.
+- Autorização para `git push` ao remoto `origin` (github.com/devWelby/Concursei). O remoto está em `c142327`; os commits locais seguintes (CI, catálogo, fila, coletor, IA, extração, páginas institucionais e direitos do titular) ainda não foram enviados, e a CI só roda no GitHub depois do envio.
 - Strix (pentest) requer Docker + chave de LLM.
 
 ## Como retomar

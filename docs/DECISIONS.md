@@ -210,3 +210,29 @@ Formato: cada decisão tem contexto, decisão, alternativas e consequências. De
 - **Consequências:**
   - A validação literal recusa parte das respostas corretas (por exemplo, a data sem o ano no mesmo trecho). A equipe completa manualmente: é o custo de nunca aceitar valor sem prova.
   - Mudar o prompt ou o schema exige nova versão, o que invalida o cache.
+
+## D-020 — Exclusão de conta por anonimização imediata
+
+- **Status:** aceita · **Data:** 2026-11-02
+- **Contexto:**
+  - A LGPD garante ao titular eliminação e portabilidade.
+  - O registro de segurança, os aceites e o histórico editorial (publicações, extrações revisadas) referenciam `users.id` e precisam continuar íntegros para comprovar obrigações e investigar incidentes.
+  - Apagar a linha de `users` quebraria essas referências ou exigiria cascatas que apagariam provas.
+- **Decisão:**
+  - **Anonimização imediata:** "excluir" anonimiza a linha de `users`.
+    - O e-mail vira um endereço inutilizável no TLD reservado `.invalid` (libera o e-mail original para novo cadastro).
+    - Nome, senha (hash aleatório), MFA e datas pessoais são apagados, e `status` passa a `deleted`.
+  - **Na mesma transação:**
+    - Apaga sessões, links pendentes, códigos de recuperação, favoritos e jobs não iniciados.
+    - Cancela e-mails pendentes e apaga endereço e conteúdo dos e-mails já registrados.
+  - **O que permanece:** aceites e eventos de segurança, ligados a uma conta que não identifica mais ninguém.
+  - **Confirmação:** exige a senha e a marcação de que a ação é definitiva. Contas da equipe não se excluem sozinhas: um administrador rebaixa o papel antes.
+  - **Pedidos pelo canal de contato:** usam `php bin/console user:delete <email> --confirm` depois de verificar a identidade.
+  - **Exportação:** JSON (`concursei-export-v1`) com os dados da pessoa, sem segredos nem HMACs de IP, confirmado com a senha.
+- **Alternativas consideradas:**
+  - Exclusão física com cascata: rejeitada, porque apagaria provas de aceite e trilha de auditoria.
+  - Período de carência (exclusão agendada): rejeitada nesta fase; exigiria fluxo de cancelamento e e-mail, e a exclusão imediata é a expectativa mais simples para quem pede.
+  - E-mail de confirmação após a exclusão: rejeitado, porque obrigaria reter o endereço depois da exclusão.
+- **Consequências:**
+  - Cópias de segurança ainda contêm os dados até serem substituídas; a política de privacidade informa isso, e o prazo de retenção das cópias precisa ser definido (F08).
+  - Se a lei exigir guardar IP e horário de acesso (Marco Civil, art. 15), essa guarda precisa ser decidida e implementada à parte.

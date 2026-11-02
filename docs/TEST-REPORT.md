@@ -156,6 +156,50 @@ Não coberto:
 - **CLI:** `queue:work`, `schedule:run` e `sources:dispatch-due` só no banco de desenvolvimento, não na suíte.
 - **Telas novas:** cobertas por testes HTTP, sem inspeção visual no navegador nesta etapa.
 
+### 2026-11-02 — Páginas institucionais e direitos do titular
+
+| Comando | Resultado |
+| --- | --- |
+| `vendor/bin/phpunit --fail-on-skipped` | **OK — 264 testes, 1201 asserções** (unit: 157 testes, 401 asserções) |
+| `php scripts/lint.php` | 252 arquivos, 0 erros |
+| `composer audit` | sem advisories |
+| Novos testes | integração: `PagesTest` (4), `AccountDataTest` (3); unit: `BootGuardTest` (2) |
+| Teste de mutação manual | sem bloqueio de conta da equipe e sem apagar favoritos na exclusão: os dois testes correspondentes falharam; link quebrado reinserido no cabeçalho: o teste de links falhou; código restaurado |
+| Smoke HTTP (`php -S`) | `/sobre`, `/privacidade`, `/termos`, `/cookies` e `/correcoes` respondem 200; `/conta/dados` sem login redireciona para `/entrar` |
+| Navegador (Chrome headless) | `/privacidade` em 500 px e `/cookies` em 1366 px: sem rolagem horizontal; aviso de responsável pendente visível sem `OPERATOR_NAME` |
+
+O que os testes cobrem:
+
+- **Páginas institucionais:**
+  - Todos os links internos da página inicial respondem sem 404.
+  - As páginas institucionais têm cache público.
+  - O responsável nunca é inventado: sem configuração aparece "a definir"; com configuração, nome e e-mail.
+  - A política mostra a versão aceita no cadastro, e a página de cookies mostra o nome real do cookie.
+  - `/correcoes` lista só revisões marcadas como correção, com a nota escapada.
+  - O BootGuard recusa produção sem responsável ou com e-mail inválido.
+- **Exportação de dados:**
+  - Exige a senha; a tentativa errada é auditada.
+  - O arquivo JSON sai como anexo `private, no-store`, só com os dados do titular e sem hash de senha.
+- **Exclusão de conta:**
+  - Não acontece sem a marcação de confirmação nem com senha errada.
+  - Anonimiza o e-mail e o nome e apaga sessões, favoritos, links e códigos.
+  - Mantém os aceites, e o login antigo deixa de funcionar.
+  - O mesmo e-mail pode criar conta nova; a exclusão repetida não faz nada.
+  - Conta da equipe é recusada.
+
+Problemas encontrados e corrigidos nesta etapa:
+
+- **Pre-commit:** o hook bloqueou dois commits por senhas literais em testes (senha errada proposital e senha de banco fictícia). Os valores passaram a ser derivados (`PASSWORD . '-errada'`, `random_bytes`), sem marcador de exceção e sem enfraquecer o verificador.
+- **Links quebrados:** "Matérias" e "Carreiras" no cabeçalho davam 404 em todas as páginas. Foram retirados até as funções existirem, e um teste passou a verificar os links internos.
+- **Expectativas de teste:** duas estavam erradas.
+  - O contêiner já tinha a instância do controlador antes da troca de configuração dentro do mesmo teste; o teste foi dividido.
+  - O título de `/sobre` estava errado no teste.
+
+Não coberto:
+
+- Comando `user:delete` (CLI): no banco de desenvolvimento só foram exercitados os caminhos de erro (uso incorreto, falta de `--confirm`, e-mail inexistente: saída 1). O caminho de sucesso usa a classe de serviço testada.
+- Revisão jurídica dos textos: depende do responsável pelo site.
+
 ## Testes externos pendentes
 
 | Integração | Situação |

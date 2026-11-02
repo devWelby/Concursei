@@ -51,7 +51,7 @@ Origem: prompt técnico do Concursei (seções indicadas como §N) e análise da
 | C12 | Commits seguros, nenhum segredo versionado | §3 | feito (contínuo) |
 | M01 | SEO (canonical, sitemap, noindex privado) | §19 | parcial (noindex/canonical no layout) |
 | M02 | Slots de anúncio desativados até config/consentimento | §19 | pendente |
-| M03 | Privacidade, cookies, termos, exportação/exclusão de conta | §18 | pendente |
+| M03 | Privacidade, cookies, termos, exportação/exclusão de conta | §18 | parcial — páginas `/privacidade`, `/cookies`, `/termos`, `/sobre`, `/correcoes` descrevendo o comportamento real (`PagesTest`); cópia dos dados em JSON e exclusão por anonimização em `/conta/dados` + CLI `user:delete` (D-020, `AccountDataTest`); BootGuard exige responsável e contato em produção (`BootGuardTest`). Pendente: revisão jurídica dos textos e decisão sobre registros de acesso do Marco Civil |
 
 ## P1 / P2
 
