@@ -7,14 +7,18 @@
         "php": ">=8.2",
         "ext-ctype": "*",
         "ext-curl": "*",
+        "ext-dom": "*",
         "ext-fileinfo": "*",
+        "ext-iconv": "*",
         "ext-json": "*",
         "ext-libxml": "*",
         "ext-mbstring": "*",
         "ext-openssl": "*",
         "ext-pdo": "*",
         "ext-pdo_mysql": "*",
+        "ext-zlib": "*",
         "phpmailer/phpmailer": "^6.10",
+        "smalot/pdfparser": "^2.13.1",
         "spomky-labs/otphp": "^11.3"
     },
     "require-dev": {
