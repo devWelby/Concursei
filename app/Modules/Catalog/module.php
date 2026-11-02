@@ -11,7 +11,10 @@ use Concursei\Modules\Catalog\AdminItemsController;
 use Concursei\Modules\Catalog\AdminReferenceController;
 use Concursei\Modules\Catalog\CatalogController;
 use Concursei\Modules\Catalog\FavoriteController;
+use Concursei\Modules\Auth\UserRepository;
+use Concursei\Modules\Catalog\DemoSeeder;
 use Concursei\Modules\Catalog\SearchIndex;
+use Concursei\Shared\Auth\AuthUser;
 
 return static function (App $app, Container $c, Config $config): void {
     $r = $app->router();
@@ -64,6 +67,17 @@ return static function (App $app, Container $c, Config $config): void {
     $app->registerConsole(static function (Console $console) use ($c): void {
         $console->register('catalog:refresh', 'Recalcula fase e próximas datas dos concursos publicados (Cron diário, após 00h de Brasília).', static function (array $o, array $a, Console $io) use ($c): int {
             $io->line('Concursos atualizados: ' . $c->get(SearchIndex::class)->refreshAll());
+            return 0;
+        });
+
+        $console->register('dev:seed-demo', 'Cria concursos FICTÍCIOS de demonstração (somente APP_ENV=local/testing): --as=<e-mail da equipe>', static function (array $o, array $a, Console $io) use ($c): int {
+            $row = $c->get(UserRepository::class)->findByEmail(mb_strtolower(trim((string) ($o['as'] ?? ''))));
+            if ($row === null) {
+                $io->error('Informe --as=<e-mail> de uma conta da equipe (crie com user:create-admin).');
+                return 1;
+            }
+            $n = $c->get(DemoSeeder::class)->run(AuthUser::fromRow($row));
+            $io->line($n === 0 ? 'Demonstração já existe; nada foi criado.' : "Concursos fictícios publicados: {$n}.");
             return 0;
         });
     });
