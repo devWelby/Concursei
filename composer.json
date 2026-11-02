@@ -1,0 +1,52 @@
+{
+    "name": "concursei/concursei",
+    "description": "Concursei — plataforma de concursos públicos em PHP puro (sem framework) para hospedagem compartilhada.",
+    "type": "project",
+    "license": "proprietary",
+    "require": {
+        "php": ">=8.2",
+        "ext-pdo": "*",
+        "ext-pdo_mysql": "*",
+        "ext-mbstring": "*",
+        "ext-json": "*",
+        "ext-openssl": "*",
+        "ext-curl": "*",
+        "ext-fileinfo": "*",
+        "ext-ctype": "*",
+        "ext-libxml": "*"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^11.5"
+    },
+    "autoload": {
+        "psr-4": {
+            "Concursei\\": "app/"
+        },
+        "files": [
+            "app/Core/helpers.php"
+        ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Concursei\\Tests\\": "tests/"
+        }
+    },
+    "config": {
+        "platform": {
+            "php": "8.2.12"
+        },
+        "sort-packages": true,
+        "optimize-autoloader": true,
+        "allow-plugins": {}
+    },
+    "scripts": {
+        "test": "phpunit",
+        "test:unit": "phpunit --testsuite unit",
+        "test:integration": "phpunit --testsuite integration",
+        "test:security": "phpunit --testsuite security",
+        "lint": "php scripts/lint.php",
+        "safety": "php scripts/check-repository-safety.php --tracked"
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}
