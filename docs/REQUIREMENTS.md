@@ -35,9 +35,9 @@ Origem: prompt técnico do Concursei (seções indicadas como §N) e análise da
 
 | ID | Requisito | Origem | Status |
 | --- | --- | --- | --- |
-| A01 | Cadastro, login, confirmação de e-mail, reset, perfil | §8 | pendente |
-| A02 | Papéis e policies de propriedade (IDOR) | §8 | pendente |
-| A03 | MFA TOTP obrigatório para administradores | §8 | pendente |
+| A01 | Cadastro, login, confirmação de e-mail, reset, perfil | §8 | **feito** — `tests/Integration/Auth/{Registration,Login,PasswordReset,Account}Test.php` (SMTP real pendente de credencial) |
+| A02 | Papéis e policies de propriedade (IDOR) | §8 | parcial — papéis/permissões e bloqueio de `/admin` testados (`LoginTest`); policies de propriedade virão com favoritos, anotações e simulados |
+| A03 | MFA TOTP obrigatório para administradores | §8 | **feito** — `tests/Integration/Auth/MfaTest.php`, `LoginTest::testAdminAreaRequiresPermissionAndStaffMfa` |
 | C01 | Catálogo/calendário com filtros, paginação, datas desconhecidas | §9, §21 | pendente |
 | C02 | Edital, fonte, evidência, revisão, retificação auditáveis | §10, §21 | pendente |
 | C03 | Geração de simulados via Gemini com limites | §11, §12 | pendente |

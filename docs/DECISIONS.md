@@ -73,3 +73,32 @@ Formato: cada decisão tem contexto, decisão, alternativas e consequências. De
 
 - **Status:** aceita · **Data:** 2026-11-02
 - **Decisão:** usar Agent Skills (planejamento, Git, segurança, testes, revisão, documentação), Context7 (documentação atual de bibliotecas) e Graphify (mapa do código). **21st.dev** não foi instalado por decisão do responsável. **Strix** exige Docker e uma chave de LLM, indisponíveis neste ambiente: o pentest automatizado fica pendente, sem substituir os testes de segurança próprios.
+
+## D-011 — E-mail transacional: PHPMailer + outbox no banco
+
+- **Status:** aceita · **Data:** 2026-11-02
+- **Contexto:** o plano compartilhado limita envios por hora e não oferece fila; implementar SMTP/MIME à mão é fonte comum de falhas (STARTTLS, codificação, injeção de cabeçalho).
+- **Decisão:** `phpmailer/phpmailer` 6.x (LGPL-2.1, mantido, sem dependências) só como transporte. Toda mensagem passa pela tabela `email_outbox` com chave de idempotência, reserva com `lock_token`, nova tentativa com espera exponencial e corpo apagado depois do envio (links com token não ficam no banco). Envio imediato quando possível; o Cron (`mail:send-pending`) cobre o restante. Transporte `capture` só existe fora de produção/homologação; em produção, sem SMTP, cadastro e recuperação aparecem como **indisponíveis** em vez de fingir sucesso.
+- **Alternativas:** `mail()` nativo (sem TLS/autenticação controlados, entregabilidade ruim); Symfony Mailer (mais dependências para o mesmo resultado).
+- **Consequências:** limite de envio configurável (`MAIL_BATCH_SIZE`); cota de 3 e-mails/hora por destinatário impede usar o site para spam.
+
+## D-012 — MFA TOTP com OTPHP, sem biblioteca de QR code
+
+- **Status:** aceita · **Data:** 2026-11-02
+- **Decisão:** `spomky-labs/otphp` 11.x (MIT) para RFC 6238, com relógio PSR-20 injetado (testável). Chave de 160 bits (32 caracteres base32, RFC 4226 §4), cifrada em repouso com AES-256-GCM e AAD do usuário; ±1 passo de tolerância; anti-replay registrando o último passo aceito; 10 códigos de recuperação de uso único guardados como HMAC. A configuração usa chave digitável e link `otpauth://` (abre o autenticador no celular). **Sem QR code** nesta versão para não adicionar outra dependência de terceiros ao front-end.
+- **Limite por conta:** 10 falhas de código a cada 15 minutos por conta, independente de IP (o contador de login por conta é zerado quando a senha confere, então sem esse limite quem tem a senha poderia tentar códigos a partir de vários IPs).
+- **Obrigatoriedade:** editores e administradores só acessam `/admin` com MFA ativo; estudantes podem ativar opcionalmente.
+- **Consequências:** perda do aparelho e dos códigos exige `php bin/console user:mfa-reset <email> --confirm` por quem opera o servidor, após verificar a identidade.
+
+## D-013 — Contas da equipe criadas somente por CLI
+
+- **Status:** aceita · **Data:** 2026-11-02
+- **Decisão:** não existe seed com administrador nem senha padrão. `php bin/console user:create-admin --email=... --name=...` lê a senha do STDIN (nunca de argumento, que ficaria no histórico do shell) e aplica a mesma política de senha. `user:role` altera papéis; ambos registram auditoria.
+- **Consequências:** o primeiro acesso da equipe é seguido da ativação obrigatória de MFA. Em Linux (hospedagem) a senha digitada não aparece no terminal (`stty -echo`); no Windows ela aparece, então prefira redirecionar de um arquivo temporário e apagá-lo em seguida.
+
+## D-014 — Público adulto (18+)
+
+- **Status:** aceita (premissa a confirmar pelo responsável) · **Data:** 2026-11-02
+- **Contexto:** os simulados usam a API Gemini, cujos termos adicionais restringem o uso em serviços voltados a menores de 18 anos (conferir a versão vigente antes do lançamento). Além disso, a LGPD (art. 14) exige consentimento específico de um dos pais para dados de crianças e regras próprias para adolescentes.
+- **Decisão:** o cadastro exige declarar 18 anos ou mais; a declaração fica registrada como consentimento `age_18`, junto com a versão dos termos (`config/legal.php`).
+- **Consequências:** se o produto passar a atender menores, será preciso revisar a integração com IA, o fluxo de consentimento e os textos legais antes de remover a exigência.
