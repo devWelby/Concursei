@@ -241,33 +241,74 @@ final class ContestRepository
     }
 
     /**
+     * Várias alterações como UMA edição (uma verificação de versão, tudo ou nada). Usado na aplicação
+     * de propostas revisadas: cada item é [id existente ou null para incluir, campos].
+     * @param array<string,mixed> $contestData
+     * @param list<array{0:?int,1:array<string,mixed>}> $events
+     * @param list<array{0:?int,1:array<string,mixed>}> $offers
+     * @throws StaleVersion|WorkflowViolation
+     */
+    public function saveBatch(int $contestId, int $expectedVersion, array $contestData, array $events, array $offers, int $userId): void
+    {
+        $cols = array_values(array_intersect(self::FIELDS, array_keys($contestData)));
+        $this->db->transaction(function () use ($contestId, $expectedVersion, $contestData, $cols, $events, $offers, $userId): void {
+            $this->touch($contestId, $expectedVersion, $userId);
+            if ($cols !== []) {
+                $this->db->run(
+                    'UPDATE contests SET ' . implode(', ', array_map(static fn (string $c): string => $c . ' = ?', $cols)) . ' WHERE id = ?',
+                    [...array_map(static fn (string $c): mixed => $contestData[$c], $cols), $contestId]
+                );
+            }
+            foreach ($events as [$id, $data]) {
+                $this->writeChild('contest_events', self::EVENT_FIELDS, self::MAX_EVENTS, 'datas', $contestId, $id, $data);
+            }
+            foreach ($offers as [$id, $data]) {
+                $this->writeChild('contest_offers', self::OFFER_FIELDS, self::MAX_OFFERS, 'cargos', $contestId, $id, $data);
+            }
+        });
+    }
+
+    /**
      * @param list<string> $fields
      * @param array<string,mixed> $data
      */
     private function saveChild(string $table, array $fields, int $max, string $what, int $contestId, int $expectedVersion, ?int $childId, array $data, int $userId): void
     {
+        $this->db->transaction(function () use ($table, $fields, $max, $what, $contestId, $expectedVersion, $childId, $data, $userId): void {
+            $this->touch($contestId, $expectedVersion, $userId);
+            $this->writeChild($table, $fields, $max, $what, $contestId, $childId, $data);
+        });
+    }
+
+    /**
+     * Inclui ou altera um item; chamar dentro de transação, depois de touch().
+     * @param list<string> $fields
+     * @param array<string,mixed> $data
+     */
+    private function writeChild(string $table, array $fields, int $max, string $what, int $contestId, ?int $childId, array $data): void
+    {
         $cols = array_values(array_intersect($fields, array_keys($data)));
         $values = array_map(static fn (string $c): mixed => $data[$c], $cols);
         $now = $this->clock->nowDb();
-        $this->db->transaction(function () use ($table, $max, $what, $contestId, $expectedVersion, $childId, $cols, $values, $now, $userId): void {
-            $this->touch($contestId, $expectedVersion, $userId);
-            if ($childId === null) {
-                if ((int) $this->db->scalar("SELECT COUNT(*) FROM {$table} WHERE contest_id = ?", [$contestId]) >= $max) {
-                    throw new WorkflowViolation("Limite de {$max} {$what} por concurso atingido.");
-                }
-                $this->db->run(
-                    sprintf('INSERT INTO %s (contest_id, %s, created_at, updated_at) VALUES (?, %s, ?, ?)', $table, implode(', ', $cols), implode(', ', array_fill(0, count($cols), '?'))),
-                    [$contestId, ...$values, $now, $now]
-                );
-                return;
+        if ($childId === null) {
+            if ((int) $this->db->scalar("SELECT COUNT(*) FROM {$table} WHERE contest_id = ?", [$contestId]) >= $max) {
+                throw new WorkflowViolation("Limite de {$max} {$what} por concurso atingido.");
             }
-            $set = implode(', ', array_map(static fn (string $c): string => $c . ' = ?', $cols));
-            // contest_id no WHERE: um item de outro concurso nunca é alterado por esta rota.
-            $n = $this->db->affected("UPDATE {$table} SET {$set}, updated_at = ? WHERE id = ? AND contest_id = ?", [...$values, $now, $childId, $contestId]);
-            if ($n === 0 && $this->db->scalar("SELECT 1 FROM {$table} WHERE id = ? AND contest_id = ?", [$childId, $contestId]) === null) {
-                throw new WorkflowViolation('Item não encontrado neste concurso.');
-            }
-        });
+            $this->db->run(
+                sprintf('INSERT INTO %s (contest_id, %s, created_at, updated_at) VALUES (?, %s, ?, ?)', $table, implode(', ', $cols), implode(', ', array_fill(0, count($cols), '?'))),
+                [$contestId, ...$values, $now, $now]
+            );
+            return;
+        }
+        if ($cols === []) {
+            return;
+        }
+        $set = implode(', ', array_map(static fn (string $c): string => $c . ' = ?', $cols));
+        // contest_id no WHERE: um item de outro concurso nunca é alterado por esta rota.
+        $n = $this->db->affected("UPDATE {$table} SET {$set}, updated_at = ? WHERE id = ? AND contest_id = ?", [...$values, $now, $childId, $contestId]);
+        if ($n === 0 && $this->db->scalar("SELECT 1 FROM {$table} WHERE id = ? AND contest_id = ?", [$childId, $contestId]) === null) {
+            throw new WorkflowViolation('Item não encontrado neste concurso.');
+        }
     }
 
     private function deleteChild(string $table, int $contestId, int $expectedVersion, int $childId, int $userId): bool
