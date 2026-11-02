@@ -84,6 +84,11 @@ class Logger
         }
     }
 
+    public static function isSensitiveKey(string $key): bool
+    {
+        return preg_match(self::SENSITIVE_KEYS, $key) === 1;
+    }
+
     public static function redact(mixed $value, int $depth = 0): mixed
     {
         if ($depth > 6) {

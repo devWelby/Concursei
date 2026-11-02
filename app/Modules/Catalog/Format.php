@@ -110,13 +110,13 @@ final class Format
     }
 
     /** Data local (d/m/Y) de um DATETIME gravado em UTC. */
-    public static function localDate(?string $utc, string $timezone): string
+    public static function localDate(?string $utc, string $timezone, bool $withTime = false): string
     {
         if ($utc === null || $utc === '') {
             return '—';
         }
         try {
-            return (new DateTimeImmutable($utc, new \DateTimeZone('UTC')))->setTimezone(new \DateTimeZone($timezone))->format('d/m/Y');
+            return (new DateTimeImmutable($utc, new \DateTimeZone('UTC')))->setTimezone(new \DateTimeZone($timezone))->format($withTime ? 'd/m/Y H:i' : 'd/m/Y');
         } catch (\Exception) {
             return '—';
         }
