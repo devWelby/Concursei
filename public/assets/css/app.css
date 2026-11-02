@@ -104,7 +104,7 @@ textarea { min-height: 7rem; }
 input[aria-invalid="true"], select[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--c-error); }
 .field-error { color: var(--c-error); font-size: .9rem; margin-top: .25rem; }
 .checkbox { display: flex; gap: .5rem; align-items: flex-start; font-weight: 400; }
-.checkbox input { margin-top: .3rem; width: 1.1rem; height: 1.1rem; }
+.checkbox input { flex: 0 0 auto; margin-top: .3rem; width: 1.1rem; height: 1.1rem; }
 .form-narrow { max-width: 28rem; }
 fieldset { border: 0; padding: 0; margin: 0 0 1rem; }
 .secret-key { display: inline-block; font-size: 1.1rem; letter-spacing: .08em; padding: .4rem .6rem; background: var(--c-info-bg); border-radius: var(--radius); word-break: break-all; }
