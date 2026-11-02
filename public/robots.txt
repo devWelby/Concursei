@@ -1,0 +1,10 @@
+User-agent: *
+Disallow: /painel
+Disallow: /conta
+Disallow: /admin
+Disallow: /entrar
+Disallow: /cadastro
+Disallow: /tentativas
+Disallow: /planos
+Disallow: /simulados/solicitacoes
+Disallow: /busca
