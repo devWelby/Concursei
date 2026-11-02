@@ -9,7 +9,7 @@ declare(strict_types=1);
 
 $root = dirname(__DIR__);
 $dirs = ['app', 'bootstrap', 'config', 'public', 'resources', 'scripts', 'tests', 'database'];
-$files = [$root . '/bin/console'];
+$files = is_file($root . '/bin/console') ? [$root . '/bin/console'] : [];
 foreach ($dirs as $dir) {
     if (!is_dir($root . '/' . $dir)) {
         continue;
