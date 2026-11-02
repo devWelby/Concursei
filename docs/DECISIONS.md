@@ -124,3 +124,89 @@ Formato: cada decisão tem contexto, decisão, alternativas e consequências. De
   - Mudanças em órgãos, bancas e cargos só aparecem ao público na próxima publicação de cada concurso.
   - O histórico público mostra data, nota e marcação "Correção" de cada revisão.
   - Snapshots em formato novo exigirão uma migração de leitura (`SNAPSHOT_SCHEMA`).
+
+## D-016 — Fila SQL com lease e um único Cron
+
+- **Status:** aceita · **Data:** 2026-11-02
+- **Contexto:** a hospedagem compartilhada não oferece worker permanente, Redis nem supervisor. Há tarefas demoradas (coleta, extração de texto, IA) e rotinas diárias. O prompt proíbe Cron por HTTP com token (`/cron.php?token=`).
+- **Decisão:**
+  - Tabela `jobs` com reserva por `UPDATE … ORDER BY … LIMIT 1` e `lock_token` aleatório (funciona em MySQL 5.7 e MariaDB 10.4, sem `SKIP LOCKED`). Cada reserva tem **lease** (`JOBS_LEASE_SECONDS`, padrão 300 s). Concluir, falhar e reagendar exigem o token, então um worker atrasado não sobrescreve outro.
+  - Tentativas com backoff `30·2^(n−1)` s + jitter (máximo 1 h), ou o tempo pedido pelo handler (`RetryLater`, por exemplo `Retry-After`), limitado a 5 s–24 h. `JobFailed` encerra sem nova tentativa. Erro inesperado grava só a classe da exceção na fila; o detalhe fica no log redigido.
+  - `unique_key` evita duplicar o mesmo trabalho ativo e é liberada nos estados finais. O payload tem no máximo 16 KB e recusa chaves sensíveis.
+  - Um único Cron (`php bin/console schedule:run`, a cada 1–5 min) executa as tarefas vencidas de `config/jobs.php`, cada uma com trava própria condicionada a `last_started_at`. As rotinas diárias seguem o horário de Brasília. `queue:work` roda em lotes curtos (`JOBS_MAX_PER_RUN`, `JOBS_MAX_SECONDS`).
+  - O painel `/admin/sistema` (só administradores) mostra o atraso do Cron, falhas, reprocessamento e cancelamento, com auditoria.
+- **Alternativas consideradas:**
+  - Worker contínuo: indisponível no plano.
+  - Cron por URL com token: proibido pelo prompt, porque o token vaza em log e histórico.
+  - Uma entrada de Cron por comando: rejeitada, porque multiplica a configuração no cPanel e não tem trava entre execuções sobrepostas.
+- **Consequências:**
+  - A latência mínima de um job é o intervalo do Cron.
+  - Job que crasha volta à fila quando o lease expira e conta tentativa.
+  - Jobs concluídos são apagados após 7 dias e falhos após 30 (`jobs:purge`).
+
+## D-017 — Coletor de fontes com proteção contra SSRF
+
+- **Status:** aceita · **Data:** 2026-11-02
+- **Contexto:** o coletor busca páginas e PDFs em endereços cadastrados pela equipe. Uma URL ou um redirecionamento malicioso poderia apontar para a rede interna da hospedagem (SSRF). O texto coletado não é confiável.
+- **Decisão:**
+  - **URL:** só `https` na porta 443, sem usuário/senha, com nome DNS de TLD alfabético (IP literal é recusado). O host precisa estar na allowlist da fonte: o domínio da URL mais os "domínios adicionais", com `*.dominio` cobrindo também o próprio domínio.
+  - **DNS e conexão:** todas as respostas A/AAAA precisam ser públicas. São bloqueadas as faixas IPv4 especiais e todo IPv6 fora de 2000::/3, além de 2001::/23, 2001:db8::/32, 2002::/16 e 3fff::/20. A conexão é fixada no IP validado (`CURLOPT_RESOLVE`), sem proxy de ambiente, e o IP efetivo é conferido.
+  - **Redirecionamento:** não é seguido automaticamente; até 3 saltos, cada um revalidado.
+  - **Resposta:** limite de tamanho medido depois da descompressão (`COLLECTOR_MAX_BYTES`), allowlist de MIME, ETag/Last-Modified para não baixar de novo, User-Agent identificado.
+  - **Armazenamento:** o original fica em `storage/private/sources` (fora do webroot), nomeado pelo SHA-256. O download para a equipe sai como anexo com `Content-Security-Policy: sandbox`. O texto é extraído com `smalot/pdfparser` (licença LGPL-3.0, usada sem modificação via Composer) ou DOM com `LIBXML_NONET`, e exibido só escapado.
+  - **Falhas:** temporárias reagendam; violação de política marca a fonte como "bloqueada" e não tenta de novo.
+  - Fonte "secundária" só serve para descoberta e não altera concurso (ver D-019).
+- **Alternativas consideradas:**
+  - Validar o host só antes da requisição: rejeitada por ser vulnerável a DNS rebinding, por isso o IP é fixado.
+  - Seguir redirecionamentos pelo cURL: rejeitada, porque o destino não seria revalidado.
+  - Ler PDF com `pdftotext`: rejeitada, porque exige binário e `exec`, normalmente indisponíveis na hospedagem.
+- **Consequências:**
+  - PDFs escaneados (só imagem) ficam "sem texto" e precisam de revisão manual (sem OCR).
+  - Sites que exigem JavaScript ou login não são coletados.
+  - Cada novo domínio de arquivos precisa ser cadastrado pela equipe.
+
+## D-018 — Porta única para a IA: orçamento, circuit breaker e registro sem conteúdo
+
+- **Status:** aceita · **Data:** 2026-11-02
+- **Contexto:** a API Gemini é paga por token e pode falhar, limitar ou demorar. O prompt exige chave só no servidor, nenhum modelo fixado de memória, nenhum sucesso simulado em produção e o modelo sem acesso a segredos, shell, SQL ou publicação.
+- **Decisão:**
+  - **Configuração:** `AiGateway` é o único caminho até o provedor. Faz REST `generateContent` com a chave no cabeçalho `x-goog-api-key` (nunca na URL) e saída estruturada (`responseMimeType: application/json` + `responseSchema`). O modelo vem só do `.env` (`GEMINI_MODEL`, sem padrão); sem chave ou modelo, a IA fica indisponível e as telas dizem isso.
+  - **Orçamento:** antes da chamada, uma reserva atômica da estimativa conservadora (caracteres/3 + saída máxima) contra os tetos diário e mensal de tokens e o limite diário de chamadas. Depois, o acerto usa o consumo real (`usageMetadata`, incluindo "raciocínio"). Resultado incerto (tempo esgotado) é cobrado pela estimativa.
+  - **Circuit breaker:** após N falhas do provedor seguidas, pausa as chamadas por um período. Erro de conteúdo (JSON inválido, bloqueio) não abre o circuito.
+  - **Registro e erros:** `ai_calls` guarda finalidade, versão do prompt, hash da entrada, tokens, latência e tipo de erro, nunca o texto enviado nem a resposta. Falhas viram `AiError` com tipo estável (`retryable`, `retryAfterSeconds`).
+  - **Testes:** o transporte `fake` existe só com `APP_ENV=testing`; em qualquer outro ambiente vira `disabled`.
+- **Alternativas consideradas:**
+  - SDK oficial: rejeitada, porque exigiria dependências extras e a API REST é estável e simples.
+  - Limitar só por número de chamadas: rejeitada, porque documentos longos custam muito mais.
+  - Guardar prompt e resposta para depuração: rejeitada, porque guardaria conteúdo de terceiros e possíveis dados pessoais em log.
+- **Consequências:**
+  - O custo em reais depende do preço vigente do modelo escolhido; os tetos em tokens precisam ser convertidos antes de ativar.
+  - O nome de campos da API pode mudar entre versões (a documentação consultada já mostra `responseFormat`); o adaptador isola essa mudança.
+
+## D-019 — Extração de edital: a IA propõe, o código confere e uma pessoa aplica
+
+- **Status:** aceita · **Data:** 2026-11-02
+- **Contexto:** digitar datas e cargos de cada edital é lento e sujeito a erro, mas a IA pode inventar valores. O prompt exige que a confiança declarada pelo modelo nunca autorize nada, que ausência de evidência bloqueie a alteração, que fonte secundária não sobrescreva a oficial e que nada seja marcado como "verificado" pela IA.
+- **Decisão:**
+  - **Prompt:** versionado (`edital-v1`). O documento vai separado das instruções e é declarado como dado: ordens embutidas nele são ignoradas. Cada item exige um trecho literal do documento (`evidence`) e a página.
+  - **Validação:** `ProposalValidator` + `EvidenceMatcher` bloqueiam o item quando:
+    - o trecho não existe no texto coletado (a comparação ignora espaços, caixa, acentos e hifenização);
+    - o valor proposto não aparece no próprio trecho: data (dia, mês e ano, inclusive intervalos e mês por extenso), horário, valor em reais, vagas, escolaridade (o nome do cargo não serve de prova), cadastro de reserva e carga horária;
+    - o formato ou o enum é inválido, o item é repetido ou a data é desconhecida (que fica desconhecida).
+    Só a proposta validada é guardada (`edital_extractions.result`), nunca a resposta bruta.
+  - **Fila e cache:** o job `edital.extract` usa a porta única da IA (D-018). Falha temporária reagenda; na última tentativa, a proposta fica "falhou" com a mensagem. A mesma versão do prompt com o mesmo texto reaproveita a proposta anterior, sem nova chamada.
+  - **Documento longo:** acima de `AI_EDITAL_MAX_INPUT_CHARS`, só as páginas com mais termos relevantes são enviadas, e a proposta fica marcada como "parcial".
+  - **Revisão:** a tela compara cada item com o rascunho atual (novo, altera, igual, bloqueado), mostrando o trecho e a página. Só itens válidos, novos ou alterados podem ser marcados.
+  - **Aplicação:**
+    - Uma única edição versionada (`ContestRepository::saveBatch`): formulário desatualizado recebe 409.
+    - O concurso volta a rascunho. Nunca publica, nunca preenche `last_verified_at` e nunca apaga dado existente por ausência na resposta.
+    - Fonte secundária não pode ser aplicada.
+    - Aplicar e descartar acontecem uma vez só e são auditados.
+  - **Permissões:** pedir extração exige `sources.manage`; revisar e aplicar exigem `contests.edit`.
+- **Alternativas consideradas:**
+  - Aceitar itens pela confiança declarada pelo modelo: proibido pelo prompt.
+  - Aplicar automaticamente o que passar na validação: rejeitada, porque a publicação exige conferência humana (D-015).
+  - Guardar a resposta bruta para auditoria: rejeitada; o hash da entrada, a versão do prompt e a proposta validada bastam para rastrear.
+- **Consequências:**
+  - A validação literal recusa parte das respostas corretas (por exemplo, a data sem o ano no mesmo trecho). A equipe completa manualmente: é o custo de nunca aceitar valor sem prova.
+  - Mudar o prompt ou o schema exige nova versão, o que invalida o cache.

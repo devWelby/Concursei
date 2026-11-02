@@ -15,7 +15,7 @@ Origem: prompt técnico do Concursei (seções indicadas como §N) e análise da
 | F04 | Migrações serial com versão/checksum | §7 | P0 | feito | `Migrator` | `InfrastructureTest` |
 | F05 | Falha segura de inicialização em produção | §5 | P0 | feito | `BootGuard`, `public/index.php` | unitário pendente |
 | F06 | Logs redigidos | §17 | P0 | feito | `Logger` | `SecurityPrimitivesTest` |
-| F07 | Fila SQL com lease, retries e Cron CLI | §16 | P0 | pendente | — | — |
+| F07 | Fila SQL com lease, retries e Cron CLI | §16 | P0 | feito | `app/Modules/Jobs` (D-016), um único Cron `schedule:run` | `QueueTest`, `SchedulerTest`; `schedule:run` no banco de desenvolvimento |
 | F08 | Backup/restauração documentados e testados | §17, §21 | P0 | pendente | — | — |
 
 ## Segurança transversal
@@ -27,8 +27,8 @@ Origem: prompt técnico do Concursei (seções indicadas como §N) e análise da
 | S03 | Rate limit persistente e atômico | §17 | P0 | feito | `RateLimiter`, `Throttle` | `InfrastructureTest` |
 | S04 | Headers (CSP nonce, nosniff, frame, referrer, HSTS opt-in) | §17 | P0 | feito | `SecurityHeaders` | `SecurityPrimitivesTest`, `KernelTest` |
 | S05 | Escape contextual e redirect local | §17 | P0 | feito | `helpers.php`, `Response::redirect` | `HttpTest`, `SecurityPrimitivesTest` |
-| S06 | SSRF no coletor (IPv4/IPv6/DNS/redirect) | §17 | P0 | pendente | — | — |
-| S07 | Upload restrito fora do webroot | §17 | P0 | pendente | — | — |
+| S06 | SSRF no coletor (IPv4/IPv6/DNS/redirect) | §17 | P0 | feito | `app/Core/Net` (D-017): allowlist, todos os A/AAAA públicos, IP fixado, redirect revalidado | `IpGuardTest`, `SafeHttpClientTest`, `CollectorTest` |
+| S07 | Upload restrito fora do webroot | §17 | P0 | parcial | documentos coletados em `storage/private/sources` por SHA-256, download como anexo com CSP `sandbox` | `CollectorTest`; upload pelo usuário ainda não existe |
 | S08 | ASVS L2 checklist + modelo de ameaça | §17 | P0 | pendente | — | — |
 
 ## Produto P0
@@ -39,7 +39,7 @@ Origem: prompt técnico do Concursei (seções indicadas como §N) e análise da
 | A02 | Papéis e policies de propriedade (IDOR) | §8 | parcial — papéis/permissões e bloqueio de `/admin` testados (`LoginTest`, `AdminTest`); favoritos filtram por dono (`FavoritesTest::testCannotRemoveSomeoneElsesFavorite`); itens de concurso escopados (`AdminTest::testItemsAreScopedToTheirContest`); anotações e simulados pendentes |
 | A03 | MFA TOTP obrigatório para administradores | §8 | **feito** — `tests/Integration/Auth/MfaTest.php`, `LoginTest::testAdminAreaRequiresPermissionAndStaffMfa` |
 | C01 | Catálogo/calendário com filtros, paginação, datas desconhecidas | §9, §21 | **feito** — `app/Modules/Catalog`; `PublicCatalogTest`, `ContestPhaseTest`, `ContestFiltersTest`, `FormatTest` (dados reais de concursos pendentes) |
-| C02 | Edital, fonte, evidência, revisão, retificação auditáveis | §10, §21 | parcial — fonte obrigatória, conferência humana, revisões imutáveis, histórico público e marcação de correção (`PublicationTest`, `AdminTest`, D-015); coleta/extração de edital e evidência por trecho dependem da fila + Gemini |
+| C02 | Edital, fonte, evidência, revisão, retificação auditáveis | §10, §21 | parcial — fonte obrigatória, conferência humana, revisões imutáveis, histórico e correções (D-015); coleta segura de fontes (D-017); extração por IA com evidência literal conferida no código, revisão humana e aplicação auditada só no rascunho (D-019; `ExtractionFlowTest`, `ProposalValidatorTest`, `EvidenceMatcherTest`). Falta validar com a API Gemini real (sem credencial) |
 | C03 | Geração de simulados via Gemini com limites | §11, §12 | pendente |
 | C04 | Correção reprodutível e conclusão idempotente | §12 | pendente |
 | C05 | Mapa de erros com amostra e "sem dados" | §13 | pendente |
@@ -47,7 +47,7 @@ Origem: prompt técnico do Concursei (seções indicadas como §N) e análise da
 | C07 | Conta, painel, favoritos, anotações, isolamento | §8 | parcial — conta, favoritos e `/painel` feitos (`FavoritesTest`, `AccountTest`); anotações pendentes |
 | C08 | Alertas por e-mail com opt-in, outbox, descadastro | §15 | pendente |
 | C10 | Hospedagem: layout privado, roteiro cPanel/Cron | §5, §16 | parcial |
-| C11 | Falhas externas sem falso sucesso | §11 | pendente |
+| C11 | Falhas externas sem falso sucesso | §11 | parcial — coletor, IA e e-mail: falha temporária reagenda, definitiva fica visível, sem IA configurada nada é simulado (`AiGatewayTest`, `GeminiProviderTest`, `ExtractionFlowTest`, `CollectorTest`); simulados pendentes |
 | C12 | Commits seguros, nenhum segredo versionado | §3 | feito (contínuo) |
 | M01 | SEO (canonical, sitemap, noindex privado) | §19 | parcial (noindex/canonical no layout) |
 | M02 | Slots de anúncio desativados até config/consentimento | §19 | pendente |

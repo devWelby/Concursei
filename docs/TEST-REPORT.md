@@ -93,6 +93,69 @@ Não coberto por teste automatizado:
 - Os comandos `catalog:refresh` e `dev:seed-demo` como CLI (as classes que eles chamam são testadas).
 - As telas administrativas no navegador (cobertas por testes HTTP).
 
+### 2026-11-02 — Fila, coletor, IA e extração de edital
+
+| Comando | Resultado |
+| --- | --- |
+| `vendor/bin/phpunit` após fila + coletor + IA | **OK — 243 testes, 991 asserções** |
+| `vendor/bin/phpunit --fail-on-skipped` após a extração de edital | **OK — 255 testes, 1112 asserções** (unit: 155 testes, 395 asserções; integração em MariaDB 10.4 real) |
+| `php scripts/lint.php` | 238 arquivos, 0 erros |
+| `composer audit` | sem advisories |
+| `check-repository-safety.php --tracked` | ok (275 itens) |
+| Novos testes | unit: `IpGuardTest`, `SafeHttpClientTest`, `TextExtractorTest`, `GeminiProviderTest` (4), `EvidenceMatcherTest` (3), `ProposalValidatorTest` (4); integração: `QueueTest` (5), `SchedulerTest` (4), `CollectorTest` (3), `AiGatewayTest` (4), `ExtractionFlowTest` (5) |
+| Teste de mutação manual da extração | três salvaguardas desligadas uma de cada vez (trecho inexistente aceito, fonte secundária aplicável, pedido sem IA enfileirado): cada uma derrubou o teste correspondente; código restaurado e suíte verde |
+| cURL real (fora da suíte) | `SafeHttpClient` buscou `https://example.com` com verificação TLS e IP fixado; o limite de tamanho e a falha de DNS responderam como esperado |
+| CLI no banco de desenvolvimento | `migrate` aplicou 0004–0007; `schedule:run` executou `sources:dispatch-due`, `queue:work` e `mail:send-pending` com sucesso |
+| Smoke HTTP (`php -S`) | `/admin/extracoes` e `/admin/documentos/{id}/extrair` sem login redirecionam para `/entrar`; POST de aplicação sem token CSRF responde 403 |
+
+O que os testes cobrem:
+
+- **Fila:**
+  - Reserva exclusiva e lease expirado devolvido à fila.
+  - Backoff e `Retry-After`; falha definitiva após o máximo de tentativas.
+  - Deduplicação por chave; recusa de payload grande ou com chave sensível.
+  - Trava por tarefa no agendador e horário diário em Brasília.
+- **SSRF:**
+  - IPs privados, reservados e mapeados (IPv4/IPv6) são bloqueados.
+  - DNS com uma única resposta interna também é bloqueado.
+  - Redirecionamentos são revalidados, e redirecionamento para fora da allowlist é recusado.
+  - Credencial na URL, porta diferente de 443 e `http` são recusados.
+  - Sem teste automatizado: o limite de tamanho fica no transporte cURL, conferido só no cURL real acima.
+- **IA:**
+  - O orçamento é reservado antes da chamada, e o mês é desfeito quando o dia recusa.
+  - Tempo esgotado é cobrado pela estimativa.
+  - O circuit breaker abre só com falhas do provedor.
+  - O registro não guarda o texto enviado.
+  - O transporte `fake` fora de testes vira `disabled`.
+- **Extração:**
+  - Trecho inventado e valor ausente do trecho ficam bloqueados.
+  - A ordem embutida no documento ("publique o concurso") chega ao modelo só como dado.
+  - A aplicação faz uma única edição versionada e volta o concurso a rascunho, sem alterar a revisão pública nem `last_verified_at`.
+  - Itens bloqueados ou não marcados são ignorados.
+  - Formulário desatualizado recebe 409; fonte secundária é recusada.
+  - Proposta aplicada não é aplicada de novo.
+  - O cache reaproveita a proposta sem nova chamada.
+  - Falha temporária volta à fila com mensagem; falha definitiva fica "falhou" sem resultado.
+  - Sem IA configurada, nada é enfileirado.
+  - Texto vindo do modelo é exibido escapado.
+
+Problemas encontrados e corrigidos nesta etapa:
+
+- **Pre-commit:** o hook bloqueou dois commits.
+  - Uma URL com credencial fictícia no teste de SSRF recebeu o marcador revisado `repo-safety: allow`.
+  - A variável `AI_MONTHLY_TOKEN_LIMIT=…` parecia segredo e foi renomeada para `AI_MONTHLY_BUDGET`, sem enfraquecer o verificador.
+- **cURL:**
+  - Constantes com o mesmo valor (`CURLE_SSL_CACERT`/`CURLE_SSL_PEER_CERTIFICATE`) quebravam o `match`.
+  - `curl_close` está obsoleto no PHP 8.
+- **CSP:** a CSP `sandbox` do download era sobrescrita pelo middleware de cabeçalhos. Agora a CSP da resposta é preservada, e o teste confere.
+- **Controle de fluxo:** o orçamento de IA usava `RuntimeException` para desfazer a reserva e passou a usar `OverflowException` específica.
+
+Não coberto:
+
+- **APIs externas reais:** chamada real à API Gemini (sem credencial) e coleta de um site oficial real (nenhuma fonte real cadastrada).
+- **CLI:** `queue:work`, `schedule:run` e `sources:dispatch-due` só no banco de desenvolvimento, não na suíte.
+- **Telas novas:** cobertas por testes HTTP, sem inspeção visual no navegador nesta etapa.
+
 ## Testes externos pendentes
 
 | Integração | Situação |
