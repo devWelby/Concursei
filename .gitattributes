@@ -1,0 +1,36 @@
+# Normalização de fim de linha: LF no repositório e no checkout (servidor Linux).
+* text=auto eol=lf
+
+*.php    text eol=lf diff=php
+*.phtml  text eol=lf diff=php
+*.sql    text eol=lf
+*.md     text eol=lf diff=markdown
+*.json   text eol=lf
+*.css    text eol=lf diff=css
+*.js     text eol=lf
+*.html   text eol=lf diff=html
+*.xml    text eol=lf
+*.yml    text eol=lf
+*.yaml   text eol=lf
+*.sh     text eol=lf
+.htaccess text eol=lf
+bin/console text eol=lf
+
+# Scripts do Windows mantêm CRLF.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Binários.
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.webp  binary
+*.ico   binary
+*.woff  binary
+*.woff2 binary
+*.pdf   binary
+
+# Lockfile: não tentar mesclar manualmente.
+composer.lock -diff merge=binary linguist-generated=true

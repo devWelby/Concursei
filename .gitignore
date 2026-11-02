@@ -1,0 +1,188 @@
+# =====================================================================
+# Concursei — .gitignore
+# Repositório PÚBLICO. Este arquivo é a primeira linha de defesa, não a
+# única: rode `php scripts/check-repository-safety.php` antes de cada commit.
+# Lembrete: .gitignore NÃO remove arquivos que já estão rastreados.
+# =====================================================================
+
+# ---------------------------------------------------------------------
+# 1. Variáveis de ambiente e configuração local (segredos)
+#    Somente .env.example (sanitizado) é versionado.
+# ---------------------------------------------------------------------
+.env
+.env.*
+!.env.example
+*.env
+!/.env.example
+/config/local.php
+/config/*.local.php
+/config/secrets/
+/config/secrets.php
+/config/production.php
+/config/*.secret.*
+# Configurações locais de provedores (banco, SMTP, Gemini, WhatsApp, analytics)
+/config/smtp.local.*
+/config/gemini.local.*
+/config/whatsapp.local.*
+/config/analytics.local.*
+/config/database.local.*
+
+# ---------------------------------------------------------------------
+# 2. Chaves, certificados privados, keystores e credenciais de serviços
+# ---------------------------------------------------------------------
+*.pem
+*.key
+*.p8
+*.p12
+*.pfx
+*.jks
+*.keystore
+*.ppk
+*.asc
+*.gpg
+id_rsa*
+id_dsa*
+id_ecdsa*
+id_ed25519*
+.htpasswd
+.netrc
+.npmrc
+.pypirc
+credentials.json
+credentials*.json
+client_secret*.json
+service-account*.json
+*-service-account.json
+*serviceAccount*.json
+gcloud-*.json
+*.secrets
+
+# ---------------------------------------------------------------------
+# 3. Dependências e credenciais do Composer / ferramentas de dev
+#    composer.lock É versionado.
+# ---------------------------------------------------------------------
+/vendor/
+/node_modules/
+composer.phar
+auth.json
+/.composer/
+.php-cs-fixer.cache
+.php_cs.cache
+.phpunit.cache/
+.phpunit.result.cache
+/phpunit.xml
+.phpstan-cache/
+phpstan.local.neon
+
+# ---------------------------------------------------------------------
+# 4. Runtime: logs, sessões, cache, temporários, filas, locks, uploads,
+#    documentos coletados. A árvore storage/ é versionada só pelos .gitkeep.
+# ---------------------------------------------------------------------
+/storage/**
+!/storage/
+!/storage/*/
+!/storage/**/.gitkeep
+*.log
+/logs/
+/tmp/
+/temp/
+*.tmp
+*.pid
+*.runtime.lock
+/public/uploads/
+/public/storage/
+/public/exports/
+
+# ---------------------------------------------------------------------
+# 5. Backups, dumps com dados, bancos locais e exportações privadas
+#    ATENÇÃO: migrações em database/migrations/*.sql CONTINUAM versionadas.
+# ---------------------------------------------------------------------
+/backups/
+/backup/
+/database/dumps/
+/database/backups/
+*.sql.gz
+*.sql.zip
+*.sql.bz2
+*.dump
+dump-*.sql
+*-dump.sql
+*_dump.sql
+backup-*.sql
+*-backup.sql
+*.bak
+*.backup
+*.sqlite
+*.sqlite3
+*.db
+*.db-journal
+/exports/
+/user-exports/
+*-export-*.csv
+gemini-raw/
+*.gemini-raw.json
+
+# ---------------------------------------------------------------------
+# 6. Artefatos de testes, cobertura, screenshots, traces, relatórios de
+#    segurança potencialmente sensíveis e pacotes de implantação
+# ---------------------------------------------------------------------
+/coverage/
+/build/
+/tests/_output/
+/tests/E2E/artifacts/
+/tests/E2E/screenshots/
+/test-results/
+/playwright-report/
+*.trace.zip
+/screenshots/
+/reports/
+/security-reports/
+/strix_runs/
+gitleaks-report*.json
+*.sarif
+/dist/
+/deploy-package/
+/release/
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.7z
+*.rar
+
+# ---------------------------------------------------------------------
+# 7. Sistema operacional e IDEs
+# ---------------------------------------------------------------------
+.DS_Store
+.AppleDouble
+._*
+Thumbs.db
+ehthumbs.db
+desktop.ini
+$RECYCLE.BIN/
+.idea/
+.vscode/
+.fleet/
+*.sublime-workspace
+*.sublime-project
+nbproject/
+*.swp
+*.swo
+*~
+
+# ---------------------------------------------------------------------
+# 8. Ferramentas de IA / MCP: configuração pessoal, permissões, histórico
+#    e segredos. Instruções públicas revisadas (ex.: CLAUDE.md na raiz)
+#    podem ser versionadas deliberadamente.
+# ---------------------------------------------------------------------
+/.claude/
+.mcp.json
+.cursor/
+.cursorrules.local
+.aider*
+.continue/
+.codeium/
+.windsurf/
+.copilot/
+/graphify-out/
+.graphify/
