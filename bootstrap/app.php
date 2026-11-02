@@ -13,6 +13,10 @@ use Concursei\Core\Http\Middleware\Throttle;
 use Concursei\Core\Http\Middleware\VerifyCsrf;
 use Concursei\Core\Http\Router;
 use Concursei\Core\Logging\Logger;
+use Concursei\Core\Net\CurlTransport;
+use Concursei\Core\Net\DnsResolver;
+use Concursei\Core\Net\HttpTransport;
+use Concursei\Core\Net\Resolver;
 use Concursei\Core\Security\Crypto;
 use Concursei\Core\Session\DatabaseSessionHandler;
 use Concursei\Core\Session\Session;
@@ -58,6 +62,9 @@ return static function (string $basePath, ?Env $env = null): App {
         $config->int('session.absolute_seconds', 1209600),
     ));
     $c->singleton(Router::class, static fn () => new Router());
+    // Rede de saída do coletor (SSRF: ver Core\Net\SafeHttpClient).
+    $c->singleton(Resolver::class, static fn () => new DnsResolver());
+    $c->singleton(HttpTransport::class, static fn () => new CurlTransport($config->string('collector.user_agent', 'ConcurseiBot/1.0')));
     $c->singleton(View::class, static function (Container $c) use ($basePath, $config): View {
         $view = new View($basePath . '/resources/views');
         $view->share('h', new TemplateHelper($c->get(Session::class), $c->get(Router::class), $config, $basePath . '/public'));
