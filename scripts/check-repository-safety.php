@@ -103,10 +103,35 @@ function nulList(string $raw): array
     return array_values(array_filter(explode("\0", $raw), static fn (string $s): bool => $s !== ''));
 }
 
+/** Regras do validador da aplicação (app/Core/Validation/Validator.php). */
+const VALIDATION_RULES = [
+    'required', 'nullable', 'string', 'int', 'bool', 'ints', 'email', 'min', 'max', 'in', 'date', 'datetime',
+    'regex', 'slug', 'url', 'confirmed', 'password',
+];
+
+/** Ex.: "required|string|password|confirmed" — lista de regras, não um segredo. */
+function isValidationRuleList(string $value): bool
+{
+    $parts = explode('|', $value);
+    if (count($parts) < 2) {
+        return false;
+    }
+    foreach ($parts as $part) {
+        $name = explode(':', $part, 2)[0];
+        if (!in_array($name, VALIDATION_RULES, true)) {
+            return false;
+        }
+    }
+    return true;
+}
+
 function isPlaceholder(string $value): bool
 {
     // Chamada de cmdlet/função PowerShell (Verbo-Substantivo), ex.: New-Secret, Get-Content.
     if (preg_match('/^[A-Z][a-z]+-[A-Z][A-Za-z]+$/', $value)) {
+        return true;
+    }
+    if (isValidationRuleList($value)) {
         return true;
     }
     $v = strtolower($value);
