@@ -46,6 +46,53 @@ Problemas encontrados e corrigidos nesta etapa:
 
 Não coberto por teste automatizado: comandos CLI (verificados só pelo smoke test acima); envio por SMTP real.
 
+### 2026-11-02 — CI (simulação local)
+
+| Comando (cópia limpa do repositório) | Resultado |
+| --- | --- |
+| `composer validate --strict`, `composer install --no-plugins --no-scripts`, `composer audit --locked` | ok, sem advisories |
+| `php scripts/lint.php` | 0 erros |
+| `vendor/bin/phpunit --fail-on-skipped` | **OK — 100 testes** (MariaDB 10.4 local) |
+| `check-repository-safety.php --tracked` e `--history` | ok |
+
+As entradas MySQL 5.7/8.0 e PHP 8.3/8.4 da matriz só rodam no GitHub; ainda não foram executadas.
+
+### 2026-11-02 — Catálogo de concursos
+
+| Comando | Resultado |
+| --- | --- |
+| `php scripts/lint.php` | 161 arquivos, 0 erros |
+| `composer audit --locked` | sem advisories |
+| `vendor/bin/phpunit --fail-on-skipped` | **OK — 156 testes, 724 asserções** (unit 77/195; integração em MariaDB 10.4 real) |
+| Novos testes | unit: `ContestPhaseTest` (16 cenários de fase), `FormatTest`, `ContestFiltersTest`; integração: `PublicationTest` (10), `AdminTest` (7), `PublicCatalogTest` (5), `FavoritesTest` (5), `DemoSeederTest` (2) |
+| Smoke test no navegador (`composer serve` + Chrome headless, 1366 px e 500 px, dados de `dev:seed-demo`) | `/concursos`, detalhe e `/calendario` renderizam; fases e contagens corretas para a data local; datas passadas esmaecidas; sem rolagem horizontal no celular |
+| CLI no banco de desenvolvimento | `migrate:status` (0003 aplicada), `dev:seed-demo` (4 concursos fictícios), `catalog:refresh` ok |
+
+O que os testes cobrem:
+
+- Só publicações revisadas chegam ao público; a página pública não muda com edições na cópia de trabalho antes da nova publicação.
+- O formulário desatualizado recebe 409 sem sobrescrever dados.
+- Itens de outro concurso respondem 404.
+- O aluno recebe 403 nas ações do fluxo, e a equipe sem MFA é desviada para `/conta/seguranca`.
+- A virada de dia usa o horário de Brasília (02h UTC ainda é o dia anterior).
+- Datas só com mês ficam fora dos dias exatos, e datas desconhecidas não entram no calendário.
+- Valores de filtro fora da allowlist e tentativas de injeção na busca são ignorados.
+- Favoritos de outra pessoa respondem 404, e os favoritos são apagados com a conta.
+
+Problemas encontrados e corrigidos nesta etapa:
+
+- Três classes de exceção num único arquivo não seriam carregadas pelo autoload PSR-4 → um arquivo por classe.
+- O auxiliar de teste criava o órgão padrão mesmo quando um órgão era informado (o `+=` avalia o valor padrão) → criação preguiçosa.
+- "1000 vagas" sem separador de milhar e "Banca Banca …" duplicado, percebidos na inspeção visual → corrigidos, com teste.
+- Duas expectativas de teste estavam erradas e foram ajustadas depois de conferir o comportamento:
+  - POST sem token CSRF responde 403 (antes da autenticação), não 401.
+  - A prova a 61 dias fica fora da janela de 60 dias do painel.
+
+Não coberto por teste automatizado:
+
+- Os comandos `catalog:refresh` e `dev:seed-demo` como CLI (as classes que eles chamam são testadas).
+- As telas administrativas no navegador (cobertas por testes HTTP).
+
 ## Testes externos pendentes
 
 | Integração | Situação |

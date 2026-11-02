@@ -8,7 +8,7 @@ Origem: prompt técnico do Concursei (seções indicadas como §N) e análise da
 | --- | --- | --- | --- | --- | --- | --- |
 | G01 | `.gitignore` validado antes do 1º commit | §3.2 | P0 | feito | `.gitignore` | `git check-ignore`/`git add --dry-run` (TEST-REPORT) |
 | G02 | Verificador de segredos/arquivos proibidos + hooks | §3.2 | P0 | feito | `scripts/check-repository-safety.php`, `scripts/install-git-hooks.php` | iscas sintéticas |
-| G03 | CI com lint, testes e detector de segredos | §3.2, §17 | P0 | pendente | — | — |
+| G03 | CI com lint, testes e detector de segredos | §3.2, §17 | P0 | parcial | `.github/workflows/ci.yml` (ações fixadas por SHA; matriz PHP 8.2/8.3/8.4 × MariaDB 10.4/MySQL 5.7/8.0) | simulada localmente em cópia limpa; execução no GitHub depende de push |
 | F01 | Front controller, rotas explícitas, sem include arbitrário | §6 | P0 | feito | `public/index.php`, `app/Core/Http/Router.php` | `HttpTest`, `KernelTest` |
 | F02 | Somente `public/` exposto; layout `public_html` | §6 | P0 | parcial | resolução de app root, `.htaccess`, `BootGuard` | `KernelTest`; deploy real pendente |
 | F03 | Erros padronizados com request ID, sem stack trace | §17, §20 | P0 | feito | `App::renderException` | `KernelTest` |
@@ -36,15 +36,15 @@ Origem: prompt técnico do Concursei (seções indicadas como §N) e análise da
 | ID | Requisito | Origem | Status |
 | --- | --- | --- | --- |
 | A01 | Cadastro, login, confirmação de e-mail, reset, perfil | §8 | **feito** — `tests/Integration/Auth/{Registration,Login,PasswordReset,Account}Test.php` (SMTP real pendente de credencial) |
-| A02 | Papéis e policies de propriedade (IDOR) | §8 | parcial — papéis/permissões e bloqueio de `/admin` testados (`LoginTest`); policies de propriedade virão com favoritos, anotações e simulados |
+| A02 | Papéis e policies de propriedade (IDOR) | §8 | parcial — papéis/permissões e bloqueio de `/admin` testados (`LoginTest`, `AdminTest`); favoritos filtram por dono (`FavoritesTest::testCannotRemoveSomeoneElsesFavorite`); itens de concurso escopados (`AdminTest::testItemsAreScopedToTheirContest`); anotações e simulados pendentes |
 | A03 | MFA TOTP obrigatório para administradores | §8 | **feito** — `tests/Integration/Auth/MfaTest.php`, `LoginTest::testAdminAreaRequiresPermissionAndStaffMfa` |
-| C01 | Catálogo/calendário com filtros, paginação, datas desconhecidas | §9, §21 | pendente |
-| C02 | Edital, fonte, evidência, revisão, retificação auditáveis | §10, §21 | pendente |
+| C01 | Catálogo/calendário com filtros, paginação, datas desconhecidas | §9, §21 | **feito** — `app/Modules/Catalog`; `PublicCatalogTest`, `ContestPhaseTest`, `ContestFiltersTest`, `FormatTest` (dados reais de concursos pendentes) |
+| C02 | Edital, fonte, evidência, revisão, retificação auditáveis | §10, §21 | parcial — fonte obrigatória, conferência humana, revisões imutáveis, histórico público e marcação de correção (`PublicationTest`, `AdminTest`, D-015); coleta/extração de edital e evidência por trecho dependem da fila + Gemini |
 | C03 | Geração de simulados via Gemini com limites | §11, §12 | pendente |
 | C04 | Correção reprodutível e conclusão idempotente | §12 | pendente |
 | C05 | Mapa de erros com amostra e "sem dados" | §13 | pendente |
 | C06 | Planejador sem exceder disponibilidade; PDF/ICS | §13 | pendente |
-| C07 | Conta, painel, favoritos, anotações, isolamento | §8 | pendente |
+| C07 | Conta, painel, favoritos, anotações, isolamento | §8 | parcial — conta, favoritos e `/painel` feitos (`FavoritesTest`, `AccountTest`); anotações pendentes |
 | C08 | Alertas por e-mail com opt-in, outbox, descadastro | §15 | pendente |
 | C10 | Hospedagem: layout privado, roteiro cPanel/Cron | §5, §16 | parcial |
 | C11 | Falhas externas sem falso sucesso | §11 | pendente |

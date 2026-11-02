@@ -102,3 +102,25 @@ Formato: cada decisão tem contexto, decisão, alternativas e consequências. De
 - **Contexto:** os simulados usam a API Gemini, cujos termos adicionais restringem o uso em serviços voltados a menores de 18 anos (conferir a versão vigente antes do lançamento). Além disso, a LGPD (art. 14) exige consentimento específico de um dos pais para dados de crianças e regras próprias para adolescentes.
 - **Decisão:** o cadastro exige declarar 18 anos ou mais; a declaração fica registrada como consentimento `age_18`, junto com a versão dos termos (`config/legal.php`).
 - **Consequências:** se o produto passar a atender menores, será preciso revisar a integração com IA, o fluxo de consentimento e os textos legais antes de remover a exigência.
+
+## D-015 — Catálogo: cópia de trabalho, revisões imutáveis e modelo de leitura
+
+- **Status:** aceita · **Data:** 2026-11-02
+- **Contexto:** informação errada sobre prazo de inscrição prejudica quem estuda, e a equipe precisa corrigir dados sem expor rascunhos. O prompt exige publicação revisada, datas desconhecidas tratadas como desconhecidas, distinção entre vagas imediatas, cadastro de reserva e número não informado, e nada marcado como "verificado" com base em confiança declarada por IA.
+- **Decisão:**
+  - A equipe edita uma **cópia de trabalho** (`contests`, `contest_offers`, `contest_events`). Toda alteração, inclusive em cargos e datas, incrementa `contests.version` com verificação otimista (formulário desatualizado recebe 409) e devolve o concurso a rascunho.
+  - Fluxo `draft → in_review → published`, sem enumeração única para o ciclo do concurso: a **situação informada** (`status`) é separada da **fase pública**, derivada por `ContestPhase` só de datas com precisão de dia, no fuso de exibição.
+  - Publicar exige: estar em revisão, permissão `contests.publish`, a caixa "conferi com o documento oficial" marcada por uma pessoa, nota pública do que mudou e nenhuma pendência (fonte ausente, edital sem cargos, fim de inscrições antes do início). A revisão em duas pessoas é opcional (`CATALOG_FOUR_EYES`).
+  - Cada publicação grava uma **revisão imutável** (`contest_revisions.snapshot`, JSON autocontido com nomes de órgão/banca/cargo) e reconstrói o **modelo de leitura** `contest_search*`. As páginas públicas leem só o modelo de leitura e as revisões, nunca a cópia de trabalho.
+  - Datas têm precisão (`day`/`month`/`year`/`unknown`). O formulário tem um único campo, e o formato digitado define a precisão (DD/MM/AAAA, MM/AAAA, AAAA ou vazio). Mês e ano nunca aparecem como dia exato, nem abrem ou fecham inscrições.
+  - Vagas: `NULL` significa "não informado"; `reserve` indica cadastro de reserva; 0 com reserva significa "somente cadastro de reserva".
+  - Arquivar retira o concurso do catálogo público, mas mantém revisões e favoritos. Só rascunhos nunca publicados podem ser excluídos. O endereço (slug) fica fixo depois da primeira publicação.
+  - O Cron diário `catalog:refresh` (depois da meia-noite de Brasília) recalcula fase, próxima data e fim das inscrições.
+- **Alternativas consideradas:**
+  - Editar direto a tabela pública: rejeitada, porque exporia rascunhos e não deixaria histórico.
+  - Versionar cada tabela (temporal): rejeitada, por ser complexa demais para hospedagem compartilhada e MySQL 5.7.
+  - Derivar a fase em tempo de consulta: rejeitada, porque os filtros por fase não usariam índice.
+- **Consequências:**
+  - Mudanças em órgãos, bancas e cargos só aparecem ao público na próxima publicação de cada concurso.
+  - O histórico público mostra data, nota e marcação "Correção" de cada revisão.
+  - Snapshots em formato novo exigirão uma migração de leitura (`SNAPSHOT_SCHEMA`).
