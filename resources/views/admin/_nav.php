@@ -1,6 +1,6 @@
 <?php
 /**
- * @var string $active painel|concursos|orgaos|bancas|cargos|fontes|sistema
+ * @var string $active painel|concursos|orgaos|bancas|cargos|fontes|extracoes|sistema
  * @var \Concursei\Core\View\View $view
  */
 use Concursei\Shared\Auth\Permissions;
@@ -9,6 +9,9 @@ $items = ['painel' => ['/admin', 'Painel'], 'concursos' => ['/admin/concursos', 
 $role = (string) ($view->shared('currentUser')['role'] ?? '');
 if (Permissions::allows($role, 'sources.manage')) {
     $items['fontes'] = ['/admin/fontes', 'Fontes'];
+}
+if (Permissions::allows($role, 'contests.edit')) {
+    $items['extracoes'] = ['/admin/extracoes', 'Propostas da IA'];
 }
 if (Permissions::allows($role, 'jobs.manage')) {
     $items['sistema'] = ['/admin/sistema', 'Sistema'];

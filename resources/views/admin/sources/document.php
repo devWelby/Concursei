@@ -26,6 +26,10 @@ $preview = $doc['text'] !== null ? mb_substr((string) $doc['text'], 0, 20000) : 
   <dt>Texto</dt><dd><span class="<?= e($textClass) ?>"><?= e($textLabel) ?></span><?= $doc['text_note'] !== null ? ' — ' . e($doc['text_note']) : '' ?></dd>
 </dl>
 
+<?php if ($doc['text_status'] === 'ready'): ?>
+  <p><a class="button button-secondary" href="/admin/documentos/<?= (int) $doc['id'] ?>/extrair">Extração assistida por IA</a></p>
+<?php endif; ?>
+
 <?php if ($preview !== null): ?>
   <section aria-labelledby="texto">
     <h2 id="texto">Texto extraído<?= mb_strlen((string) $doc['text']) > 20000 ? ' (primeiros 20.000 caracteres)' : '' ?></h2>
