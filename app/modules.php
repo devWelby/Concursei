@@ -9,5 +9,6 @@ declare(strict_types=1);
 return [
     require __DIR__ . '/Modules/Mail/module.php',
     require __DIR__ . '/Modules/Auth/module.php',
+    require __DIR__ . '/Modules/Catalog/module.php',
     require __DIR__ . '/Modules/Home/module.php',
 ];
