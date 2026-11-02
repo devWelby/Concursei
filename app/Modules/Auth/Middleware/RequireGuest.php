@@ -21,7 +21,7 @@ final class RequireGuest implements Middleware
     public function handle(Request $request, Closure $next, ?string $arg = null): Response
     {
         if ($request->attribute('user') instanceof AuthUser) {
-            return Response::redirect($this->config->string('app.home_after_login', '/conta'));
+            return Response::redirect($this->config->string('app.home_after_login', '/painel'));
         }
         return $next($request);
     }

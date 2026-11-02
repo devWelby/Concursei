@@ -18,7 +18,7 @@ return [
     'hsts' => $env->bool('APP_HSTS', false),
     'log_level' => $env->string('LOG_LEVEL', 'info'),
     // Destino padrão após login (caminho local).
-    'home_after_login' => '/conta',
+    'home_after_login' => '/painel',
     // Identidade do operador (exibida em privacidade/termos). Vazio = pendência de configuração.
     'operator_name' => $env->string('OPERATOR_NAME', ''),
     'contact_email' => $env->string('CONTACT_EMAIL', ''),

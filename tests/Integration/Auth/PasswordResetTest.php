@@ -49,7 +49,7 @@ final class PasswordResetTest extends IntegrationTestCase
 
         $this->assertRedirect($this->post('/entrar', ['email' => 'aluna@example.com', 'password' => self::PASSWORD]), '/entrar');
         self::assertNull($this->session()->userId());
-        $this->assertRedirect($this->post('/entrar', ['email' => 'aluna@example.com', 'password' => self::NEW_PASSWORD]), '/conta');
+        $this->assertRedirect($this->post('/entrar', ['email' => 'aluna@example.com', 'password' => self::NEW_PASSWORD]), '/painel');
 
         // Token é de uso único.
         $this->post('/sair');

@@ -104,8 +104,21 @@ final class Vocabulary
         'unknown' => 'A definir',
     ];
 
+    /**
+     * Situações do filtro público (agrupam fases). Sem filtro, a listagem
+     * esconde encerrados e cancelados.
+     */
+    public const SITUATIONS = [
+        'abertos' => ['label' => 'Inscrições abertas', 'phases' => ['registration_open']],
+        'edital' => ['label' => 'Edital publicado, inscrições não iniciadas', 'phases' => ['edital_published']],
+        'previstos' => ['label' => 'Previstos, autorizados ou com banca definida', 'phases' => ['predicted', 'authorized', 'board_defined']],
+        'andamento' => ['label' => 'Inscrições encerradas, em andamento', 'phases' => ['registration_closed', 'exam_done', 'answer_key', 'result']],
+        'suspensos' => ['label' => 'Suspensos', 'phases' => ['suspended']],
+        'encerrados' => ['label' => 'Concluídos ou cancelados', 'phases' => ['concluded', 'cancelled']],
+    ];
+
     public const SORTS = [
-        'recentes' => 'Publicados recentemente',
+        'recentes' => 'Atualizados recentemente',
         'inscricoes' => 'Inscrições terminando antes',
         'proximos' => 'Próximas datas',
         'vagas' => 'Mais vagas',

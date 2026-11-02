@@ -24,7 +24,7 @@ final class LoginTest extends IntegrationTestCase
         $id = $this->createUser();
         $this->session()->start();
         $before = $this->session()->csrfToken();
-        $this->assertRedirect($this->post('/entrar', ['email' => 'ALUNA@example.com', 'password' => self::PASSWORD]), '/conta');
+        $this->assertRedirect($this->post('/entrar', ['email' => 'ALUNA@example.com', 'password' => self::PASSWORD]), '/painel');
         self::assertSame($id, $this->session()->userId());
         self::assertNotSame($before, $this->session()->csrfToken(), 'Estado da sessão é renovado no login (fixação)');
         self::assertNotNull($this->db->scalar('SELECT last_login_at FROM users WHERE id = ?', [$id]));
@@ -97,8 +97,8 @@ final class LoginTest extends IntegrationTestCase
     public function testGuestPagesRedirectWhenLoggedIn(): void
     {
         $this->loginAs($this->createUser());
-        $this->assertRedirect($this->request('GET', '/entrar'), '/conta');
-        $this->assertRedirect($this->request('GET', '/cadastro'), '/conta');
+        $this->assertRedirect($this->request('GET', '/entrar'), '/painel');
+        $this->assertRedirect($this->request('GET', '/cadastro'), '/painel');
     }
 
     public function testLogoutDestroysSession(): void

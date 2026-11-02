@@ -42,7 +42,7 @@ final class AuthController extends Controller
     {
         $intended = $this->session->get('intended');
         $this->session->forget('intended');
-        return Response::redirect(is_string($intended) ? $intended : $this->config->string('app.home_after_login', '/conta'));
+        return Response::redirect(is_string($intended) ? $intended : $this->config->string('app.home_after_login', '/painel'));
     }
 
     // ---- Cadastro ----

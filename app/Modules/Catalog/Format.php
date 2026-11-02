@@ -58,7 +58,7 @@ final class Format
         return match ($precision) {
             'year' => $d->format('Y') . ' (previsto)',
             'month' => self::MONTHS[(int) $d->format('n') - 1] . ' de ' . $d->format('Y') . ' (previsto)',
-            default => $d->format('d/m/Y') . ($time !== null && $time !== '' ? ' às ' . self::time($time) : ''),
+            default => $d->format('d/m/Y') . ($time !== null && $time !== '' ? ' às ' . self::timeOfDay($time) : ''),
         };
     }
 
@@ -109,12 +109,43 @@ final class Format
         return $d ? $d->format('d/m/Y') : '—';
     }
 
+    /** Data local (d/m/Y) de um DATETIME gravado em UTC. */
+    public static function localDate(?string $utc, string $timezone): string
+    {
+        if ($utc === null || $utc === '') {
+            return '—';
+        }
+        try {
+            return (new DateTimeImmutable($utc, new \DateTimeZone('UTC')))->setTimezone(new \DateTimeZone($timezone))->format('d/m/Y');
+        } catch (\Exception) {
+            return '—';
+        }
+    }
+
+    public static function weekday(string $date): string
+    {
+        $d = DateTimeImmutable::createFromFormat('!Y-m-d', $date);
+        return $d ? ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'][(int) $d->format('w')] : '';
+    }
+
+    /** Classe visual do selo de fase (o texto do selo sempre acompanha a cor). */
+    public static function phaseClass(string $phase): string
+    {
+        return match ($phase) {
+            'registration_open' => 'badge badge-success',
+            'predicted', 'authorized', 'board_defined' => 'badge badge-warn',
+            'suspended', 'cancelled' => 'badge badge-error',
+            default => 'badge',
+        };
+    }
+
     public static function monthLabel(DateTimeImmutable $d): string
     {
         return ucfirst(self::MONTHS[(int) $d->format('n') - 1]) . ' de ' . $d->format('Y');
     }
 
-    private static function time(string $time): string
+    /** "13:30:00" → "13h30"; "09:00" → "9h". */
+    public static function timeOfDay(string $time): string
     {
         [$h, $m] = array_map('intval', explode(':', $time) + [1 => 0]);
         return $m === 0 ? sprintf('%dh', $h) : sprintf('%dh%02d', $h, $m);

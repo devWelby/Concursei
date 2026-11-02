@@ -33,6 +33,7 @@ $currentUser = $currentUser ?? null;
         <li><a href="/materias">Matérias</a></li>
         <li><a href="/carreiras">Carreiras</a></li>
         <?php if ($currentUser !== null): ?>
+          <li><a href="/painel">Meu painel</a></li>
           <li><a href="/conta">Minha conta</a></li>
           <?php if (in_array($currentUser['role'] ?? '', ['editor', 'admin'], true)): ?><li><a href="/admin">Administração</a></li><?php endif; ?>
           <li>

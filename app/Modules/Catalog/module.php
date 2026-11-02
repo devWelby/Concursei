@@ -9,10 +9,24 @@ use Concursei\Core\Container;
 use Concursei\Modules\Catalog\AdminContestController;
 use Concursei\Modules\Catalog\AdminItemsController;
 use Concursei\Modules\Catalog\AdminReferenceController;
+use Concursei\Modules\Catalog\CatalogController;
+use Concursei\Modules\Catalog\FavoriteController;
 use Concursei\Modules\Catalog\SearchIndex;
 
 return static function (App $app, Container $c, Config $config): void {
     $r = $app->router();
+
+    // Público (cache público quando não há sessão; slug validado na rota).
+    $slug = '{slug:[a-z0-9]+(?:-[a-z0-9]+)*}';
+    $r->get('/concursos', [CatalogController::class, 'index'], ['name' => 'contests', 'cache' => 'public', 'middleware' => ['throttle:search']]);
+    $r->get('/concursos/' . $slug, [CatalogController::class, 'show'], ['name' => 'contest', 'cache' => 'public']);
+    $r->get('/concursos/' . $slug . '/acompanhar', [CatalogController::class, 'follow'], ['middleware' => ['auth']]);
+    $r->get('/calendario', [CatalogController::class, 'calendar'], ['name' => 'calendar', 'cache' => 'public']);
+
+    // Pessoa logada: acompanhar concursos e painel.
+    $r->post('/favoritos', [FavoriteController::class, 'store'], ['middleware' => ['auth', 'can:favorites.manage', 'throttle:default']]);
+    $r->delete('/favoritos/{id:\d+}', [FavoriteController::class, 'destroy'], ['middleware' => ['auth', 'can:favorites.manage', 'throttle:default']]);
+    $r->get('/painel', [FavoriteController::class, 'dashboard'], ['name' => 'dashboard', 'middleware' => ['auth']]);
 
     // Administração (equipe com MFA; ver RequirePermission).
     $staff = static fn (string $permission): array => ['middleware' => ['auth', 'can:' . $permission, 'throttle:admin']];

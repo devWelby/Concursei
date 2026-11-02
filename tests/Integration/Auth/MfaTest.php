@@ -99,7 +99,7 @@ final class MfaTest extends IntegrationTestCase
     {
         [, $codes] = $this->enableViaHttp();
         $this->loginPassword();
-        $this->assertRedirect($this->post('/entrar/verificacao', ['code' => $codes[0]]), '/conta');
+        $this->assertRedirect($this->post('/entrar/verificacao', ['code' => $codes[0]]), '/painel');
         $this->loginPassword();
         $this->assertRedirect($this->post('/entrar/verificacao', ['code' => $codes[0]]), '/entrar/verificacao');
         self::assertSame(9, $this->app->container->get(MfaService::class)->remainingRecoveryCodes($this->userId));
