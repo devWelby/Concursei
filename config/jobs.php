@@ -18,6 +18,8 @@ return [
     // Um único Cron chama "schedule:run" (ex.: a cada 5 min). Cada tarefa roda com lock próprio.
     // every_minutes: intervalo mínimo entre execuções. daily_at: horário local (APP_DISPLAY_TIMEZONE).
     'schedule' => [
+        // Enfileirar antes de queue:work para a coleta rodar na mesma chamada.
+        'sources:dispatch-due' => ['every_minutes' => 15],
         'queue:work' => ['every_minutes' => 1, 'options' => ['max-jobs' => $env->int('JOBS_MAX_PER_RUN', 5), 'max-seconds' => $env->int('JOBS_MAX_SECONDS', 40)]],
         'mail:send-pending' => ['every_minutes' => 5],
         'catalog:refresh' => ['daily_at' => '00:05'],

@@ -11,5 +11,6 @@ return [
     require __DIR__ . '/Modules/Mail/module.php',
     require __DIR__ . '/Modules/Auth/module.php',
     require __DIR__ . '/Modules/Catalog/module.php',
+    require __DIR__ . '/Modules/Sources/module.php',
     require __DIR__ . '/Modules/Home/module.php',
 ];

@@ -63,7 +63,9 @@ final class SecurityHeaders
 
     public function apply(Response $response): Response
     {
-        $response->header('Content-Security-Policy', $this->csp());
+        // A resposta pode acrescentar diretivas (ex.: sandbox em downloads), nunca remover as da base.
+        $own = $response->getHeader('Content-Security-Policy');
+        $response->header('Content-Security-Policy', ($own !== null && $own !== '' ? rtrim($own, '; ') . '; ' : '') . $this->csp());
         $response->header('X-Content-Type-Options', 'nosniff');
         $response->header('X-Frame-Options', 'DENY');
         $response->header('Referrer-Policy', 'strict-origin-when-cross-origin');
