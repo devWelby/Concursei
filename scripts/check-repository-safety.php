@@ -105,6 +105,10 @@ function nulList(string $raw): array
 
 function isPlaceholder(string $value): bool
 {
+    // Chamada de cmdlet/função PowerShell (Verbo-Substantivo), ex.: New-Secret, Get-Content.
+    if (preg_match('/^[A-Z][a-z]+-[A-Z][A-Za-z]+$/', $value)) {
+        return true;
+    }
     $v = strtolower($value);
     if (str_starts_with($v, '$') || str_starts_with($v, '%') || str_starts_with($v, '<') || str_starts_with($v, '{')
         || str_contains($v, '(') || str_contains($v, '->') || str_contains($v, '::') || str_contains($v, '[')) {
