@@ -23,6 +23,14 @@
     }
   });
 
+  // Botão de impressão: <button data-print>.
+  document.addEventListener('click', function (ev) {
+    var el = ev.target instanceof Element ? ev.target.closest('[data-print]') : null;
+    if (el) {
+      window.print();
+    }
+  });
+
   // Exposto para módulos: lê o token CSRF da meta/input para requisições fetch.
   window.Concursei = window.Concursei || {};
   window.Concursei.csrf = function () {
