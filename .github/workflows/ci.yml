@@ -1,0 +1,105 @@
+# CI do Concursei: qualidade, dependências, segredos e testes contra bancos reais.
+# Ações fixadas por SHA de commit (cadeia de suprimentos); a versão fica no comentário.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Lint, dependências e segredos
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0 # o verificador de segredos percorre todo o histórico
+          persist-credentials: false
+
+      - uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
+        with:
+          php-version: '8.2'
+          extensions: pdo_mysql, mbstring, openssl, curl, fileinfo, ctype, libxml
+          coverage: none
+          tools: composer:v2
+
+      - name: composer validate
+        run: composer validate --strict
+
+      - name: Instalar dependências (lockfile, sem scripts de pacotes)
+        run: composer install --no-interaction --no-progress --prefer-dist --no-plugins --no-scripts
+
+      - name: Auditoria de dependências
+        run: composer audit --locked
+
+      - name: Lint PHP
+        run: php scripts/lint.php
+
+      - name: Segredos e arquivos proibidos (arquivos rastreados)
+        run: php scripts/check-repository-safety.php --tracked
+
+      - name: Segredos e arquivos proibidos (histórico completo)
+        run: php scripts/check-repository-safety.php --history
+
+  tests:
+    name: Testes · PHP ${{ matrix.php }} · ${{ matrix.db }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Compatibilidade declarada em D-003: MariaDB 10.4+ e MySQL 5.7+/8.x.
+          - php: '8.2'
+            db: 'mariadb:10.4'
+          - php: '8.3'
+            db: 'mysql:5.7'
+          - php: '8.4'
+            db: 'mysql:8.0'
+    services:
+      db:
+        image: ${{ matrix.db }}
+        # Contêiner efêmero e isolado do job: root sem senha é aceitável SÓ aqui.
+        env:
+          MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
+          MYSQL_DATABASE: concursei_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 --silent"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=30
+    env:
+      DB_HOST: 127.0.0.1
+      DB_PORT: '3306'
+      DB_DATABASE: concursei_test
+      DB_USERNAME: root
+      DB_PASSWORD: ''
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: pdo_mysql, mbstring, openssl, curl, fileinfo, ctype, libxml
+          coverage: none
+          tools: composer:v2
+
+      - name: Instalar dependências (lockfile, sem scripts de pacotes)
+        run: composer install --no-interaction --no-progress --prefer-dist --no-plugins --no-scripts
+
+      # --fail-on-skipped: sem banco os testes de integração seriam pulados em silêncio.
+      - name: PHPUnit (unit + integração + segurança)
+        run: vendor/bin/phpunit --fail-on-skipped --colors=never
