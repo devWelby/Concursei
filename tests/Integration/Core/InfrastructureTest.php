@@ -68,7 +68,12 @@ final class InfrastructureTest extends IntegrationTestCase
         $handler = $this->app->container->get(DatabaseSessionHandler::class);
         $idA = $handler->create_sid();
         $idB = $handler->create_sid();
-        $handler->setUserId(42);
+        // sessions.user_id tem FK para users (migração 0002): a sessão precisa de um usuário real.
+        $uid = $this->db->insert(
+            "INSERT INTO users (email, password_hash, display_name, role, status, created_at, updated_at) VALUES ('sessao@example.com', 'x', 'Sessão', 'student', 'active', ?, ?)",
+            [$this->clock->nowDb(), $this->clock->nowDb()]
+        );
+        $handler->setUserId($uid);
         $handler->read($idA);
         $handler->write($idA, 'a|s:1:"x";');
         $handler->close();
@@ -81,7 +86,7 @@ final class InfrastructureTest extends IntegrationTestCase
         self::assertSame('a|s:1:"x";', $handler->read($idA));
         $handler->close();
 
-        self::assertSame(1, $handler->destroyForUser(42, $idA), 'Logout global preserva a sessão atual');
+        self::assertSame(1, $handler->destroyForUser($uid, $idA), 'Logout global preserva a sessão atual');
         self::assertFalse($handler->validateId($idB));
         self::assertTrue($handler->validateId($idA));
         self::assertFalse($handler->validateId('../../etc/passwd'));
