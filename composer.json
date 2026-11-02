@@ -47,7 +47,11 @@
         "test:integration": "phpunit --testsuite integration",
         "test:security": "phpunit --testsuite security",
         "lint": "php scripts/lint.php",
-        "safety": "php scripts/check-repository-safety.php --tracked"
+        "safety": "php scripts/check-repository-safety.php --tracked",
+        "serve": [
+            "Composer\\Config::disableProcessTimeout",
+            "@php -S 127.0.0.1:8000 -t public scripts/dev/router.php"
+        ]
     },
     "minimum-stability": "stable",
     "prefer-stable": true

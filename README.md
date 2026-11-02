@@ -18,7 +18,7 @@ cp .env.example .env                       # preencha DB_* (nunca versione o .en
 php bin/console key:generate --write       # gera APP_KEY no .env
 php bin/console migrate
 php bin/console app:check                  # diagnóstico sem exibir segredos
-php -S 127.0.0.1:8000 -t public public/index.php
+composer serve                             # http://127.0.0.1:8000 (php -S com scripts/dev/router.php)
 ```
 
 Windows/XAMPP: `powershell -ExecutionPolicy Bypass -File scripts/dev/test-db.ps1 start` cria um MariaDB isolado em `127.0.0.1:3310` (bancos `concursei_test` e `concursei_dev`) e gera `.env.testing`.
@@ -29,6 +29,7 @@ Windows/XAMPP: `powershell -ExecutionPolicy Bypass -File scripts/dev/test-db.ps1
 | --- | --- |
 | `composer test` | Suíte completa (unit + integração + segurança) |
 | `composer test:unit` / `test:integration` / `test:security` | Suítes separadas |
+| `composer serve` | Servidor local em `127.0.0.1:8000` (o roteador de desenvolvimento serve CSS/JS como o `.htaccess` faria) |
 | `composer lint` | Sintaxe de todos os arquivos PHP |
 | `php scripts/check-repository-safety.php --staged` | Bloqueia segredos/arquivos proibidos antes do commit |
 | `php scripts/install-git-hooks.php` | Instala hooks pre-commit/pre-push locais |
