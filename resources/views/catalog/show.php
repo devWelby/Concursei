@@ -38,7 +38,7 @@ $paragraphs = $c['summary'] !== null ? preg_split('/\R{2,}/u', trim((string) $c[
   <p>
     <span class="<?= e(Format::phaseClass((string) $contest['phase'])) ?>"><?= e(Vocabulary::label(Vocabulary::PHASES, $contest['phase'])) ?></span>
     <span class="meta">
-      <?= e($org['name']) ?> · <?= $board !== null ? 'Banca ' . e($board['name']) : 'Banca a definir' ?> · <?= e($c['uf'] !== null ? Vocabulary::label(Vocabulary::UFS, $c['uf']) : 'Nacional / várias UFs') ?>
+      <?= e($org['name']) ?> · <?= $board !== null ? 'Banca: ' . e($board['name']) : 'Banca a definir' ?> · <?= e($c['uf'] !== null ? Vocabulary::label(Vocabulary::UFS, $c['uf']) : 'Nacional / várias UFs') ?>
     </span>
   </p>
 
@@ -96,7 +96,9 @@ $paragraphs = $c['summary'] !== null ? preg_split('/\R{2,}/u', trim((string) $c[
           </li>
         <?php endforeach; ?>
       </ul>
-      <p class="source-note">Datas marcadas "(previsto)" ainda não têm dia confirmado em documento oficial.</p>
+      <?php if (array_filter($s['events'], static fn (array $ev): bool => in_array($ev['precision'], ['month', 'year'], true)) !== []): ?>
+        <p class="source-note">Datas marcadas "(previsto)" ainda não têm dia confirmado em documento oficial.</p>
+      <?php endif; ?>
     <?php endif; ?>
   </section>
 

@@ -15,7 +15,7 @@ $next = $c['next_event_on'] !== null ? Format::countdown((string) $c['next_event
   <h2><a href="/concursos/<?= e($c['slug']) ?>"><?= e($c['title']) ?></a></h2>
   <p class="meta">
     <?= e($c['organization_acronym'] ?? $c['organization_name']) ?>
-    · <?= $c['exam_board_name'] !== null ? 'Banca ' . e($c['exam_board_name']) : 'Banca a definir' ?>
+    · <?= $c['exam_board_name'] !== null ? 'Banca: ' . e($c['exam_board_name']) : 'Banca a definir' ?>
     · <?= e($c['uf'] ?? 'Nacional') ?>
   </p>
   <p><span class="<?= e(Format::phaseClass((string) $c['phase'])) ?>"><?= e(Vocabulary::label(Vocabulary::PHASES, $c['phase'])) ?></span></p>

@@ -56,6 +56,7 @@ final class FormatTest extends TestCase
     public function testVacancies(): void
     {
         self::assertSame('120 vagas', Format::vacancies(120, false));
+        self::assertSame('1.000 vagas + cadastro de reserva', Format::vacancies(1000, true));
         self::assertSame('1 vaga + cadastro de reserva', Format::vacancies(1, true));
         self::assertSame('Cadastro de reserva', Format::vacancies(null, true));
         self::assertSame('Cadastro de reserva', Format::vacancies(0, true));

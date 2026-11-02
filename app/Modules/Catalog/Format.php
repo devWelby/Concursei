@@ -154,7 +154,7 @@ final class Format
     public static function vacancies(?int $vacancies, bool $reserve): string
     {
         if ($vacancies !== null && $vacancies > 0) {
-            $txt = $vacancies . ($vacancies === 1 ? ' vaga' : ' vagas');
+            $txt = number_format($vacancies, 0, ',', '.') . ($vacancies === 1 ? ' vaga' : ' vagas');
             return $reserve ? $txt . ' + cadastro de reserva' : $txt;
         }
         return $reserve ? 'Cadastro de reserva' : 'Não informado';

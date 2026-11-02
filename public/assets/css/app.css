@@ -164,6 +164,8 @@ th, td { text-align: left; padding: .5rem; border-bottom: 1px solid var(--c-bord
 .calendar-day ul { margin: 0; padding-left: 1.2rem; }
 .month-nav { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; align-items: center; }
 .month-nav a { display: inline-flex; align-items: center; min-height: 44px; }
+.month-nav h2 { margin: 0; }
+form.card { margin-bottom: var(--space); }
 .source-note { font-size: .9rem; color: var(--c-muted); }
 
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }
