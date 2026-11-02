@@ -30,8 +30,6 @@ $currentUser = $currentUser ?? null;
       <ul>
         <li><a href="/concursos">Concursos</a></li>
         <li><a href="/calendario">Calendário</a></li>
-        <li><a href="/materias">Matérias</a></li>
-        <li><a href="/carreiras">Carreiras</a></li>
         <?php if ($currentUser !== null): ?>
           <li><a href="/painel">Meu painel</a></li>
           <li><a href="/conta">Minha conta</a></li>

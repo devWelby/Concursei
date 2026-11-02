@@ -31,6 +31,11 @@ final class PagesTest extends IntegrationTestCase
             self::assertStringContainsString('<h1>' . $heading, $res->body(), $path);
             self::assertSame('public, max-age=300', $res->getHeader('Cache-Control'), $path);
         }
+        preg_match_all('/href="(\/[^"#?]*)"/', $home, $links);
+        foreach (array_unique($links[1]) as $path) {
+            $status = $this->request('GET', $path)->status();
+            self::assertNotSame(404, $status, "Link interno da página inicial quebrado: {$path}");
+        }
         $signup = $this->request('GET', '/cadastro')->body();
         self::assertStringContainsString('href="/termos"', $signup);
         self::assertStringContainsString('href="/privacidade"', $signup);
