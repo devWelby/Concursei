@@ -87,6 +87,6 @@ $marketing = $consents['marketing_email']['granted'] ?? false;
         </ul>
       </details>
     <?php endif; ?>
-    <p><a href="/privacidade">Política de privacidade</a></p>
+    <p><a href="/conta/dados">Baixar meus dados ou excluir a conta</a> · <a href="/privacidade">Política de privacidade</a></p>
   </section>
 </div>

@@ -8,6 +8,8 @@ use Concursei\Core\Console\Console;
 use Concursei\Core\Container;
 use Concursei\Core\Validation\PasswordPolicy;
 use Concursei\Modules\Auth\AccountController;
+use Concursei\Modules\Auth\AccountDataController;
+use Concursei\Modules\Auth\AccountDataService;
 use Concursei\Modules\Auth\AuthController;
 use Concursei\Modules\Auth\Middleware\LoadCurrentUser;
 use Concursei\Modules\Auth\Middleware\RequireAuth;
@@ -64,6 +66,10 @@ return static function (App $app, Container $c, Config $config): void {
     $r->post('/conta/seguranca/ativar', [AccountController::class, 'enableMfa'], ['middleware' => ['auth', 'throttle:mfa']]);
     $r->post('/conta/seguranca/desativar', [AccountController::class, 'disableMfa'], ['middleware' => ['auth', 'throttle:mfa']]);
     $r->post('/conta/seguranca/codigos', [AccountController::class, 'regenerateCodes'], ['middleware' => ['auth', 'throttle:mfa']]);
+    // Direitos do titular: cópia dos dados e exclusão da conta (confirmadas com a senha).
+    $r->get('/conta/dados', [AccountDataController::class, 'show'], ['name' => 'account.data', 'middleware' => ['auth']]);
+    $r->post('/conta/dados/exportar', [AccountDataController::class, 'export'], ['middleware' => ['auth', 'throttle:export']]);
+    $r->post('/conta/excluir', [AccountDataController::class, 'delete'], ['middleware' => ['auth', 'throttle:login']]);
 
     $app->registerConsole(static function (Console $console) use ($c): void {
         $findUser = static function (Console $io, string $email) use ($c): ?array {
@@ -142,6 +148,25 @@ return static function (App $app, Container $c, Config $config): void {
             $c->get(MfaService::class)->disable((int) $row['id']);
             $c->get(AuditLog::class)->record(null, 'auth.mfa_reset_cli', 'user', (int) $row['id']);
             $io->line('MFA desativado. A pessoa deve reativá-lo no próximo acesso.');
+            return 0;
+        });
+
+        $console->register('user:delete', 'Exclui (anonimiza) a conta de estudante a pedido do titular, após verificar a identidade: <email> --confirm', static function (array $o, array $a, Console $io) use ($c, $findUser): int {
+            if (count($a) !== 1 || !isset($o['confirm'])) {
+                $io->error('Uso: user:delete <email> --confirm');
+                return 1;
+            }
+            $row = $findUser($io, $a[0]);
+            if ($row === null) {
+                return 1;
+            }
+            if ($row['role'] !== 'student') {
+                $io->error('Conta da equipe: mude o papel para student (user:role) antes de excluir.');
+                return 1;
+            }
+            $c->get(AccountDataService::class)->delete((int) $row['id']);
+            $c->get(AuditLog::class)->record(null, 'account.delete_cli', 'user', (int) $row['id']);
+            $io->line('Conta excluída: identificação anonimizada, sessões, favoritos e links pendentes apagados.');
             return 0;
         });
 
