@@ -34,6 +34,25 @@ final class FormatTest extends TestCase
         self::assertSame('A definir', Format::eventDate(null, 'unknown'));
     }
 
+    public function testEventDateInputDerivesPrecision(): void
+    {
+        self::assertSame(['date' => '2027-03-15', 'precision' => 'day'], Format::parseEventDate('15/03/2027'));
+        self::assertSame(['date' => '2027-03-05', 'precision' => 'day'], Format::parseEventDate('5/3/2027'));
+        self::assertSame(['date' => '2027-03-01', 'precision' => 'month'], Format::parseEventDate('03/2027'));
+        self::assertSame(['date' => '2027-01-01', 'precision' => 'year'], Format::parseEventDate(' 2027 '));
+        self::assertSame(['date' => null, 'precision' => 'unknown'], Format::parseEventDate(''));
+        self::assertFalse(Format::parseEventDate('31/02/2027'), 'Dia inexistente');
+        self::assertFalse(Format::parseEventDate('13/2027'));
+        self::assertFalse(Format::parseEventDate('1999'), 'Fora do intervalo aceito');
+        self::assertFalse(Format::parseEventDate('2027-03-15'));
+        self::assertFalse(Format::parseEventDate('amanhã'));
+
+        self::assertSame('15/03/2027', Format::eventDateInput('2027-03-15', 'day'));
+        self::assertSame('03/2027', Format::eventDateInput('2027-03-01', 'month'));
+        self::assertSame('2027', Format::eventDateInput('2027-01-01', 'year'));
+        self::assertSame('', Format::eventDateInput(null, 'unknown'));
+    }
+
     public function testVacancies(): void
     {
         self::assertSame('120 vagas', Format::vacancies(120, false));

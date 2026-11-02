@@ -62,6 +62,47 @@ final class Format
         };
     }
 
+    /**
+     * Campo único de data do formulário: "DD/MM/AAAA" (dia), "MM/AAAA" (mês),
+     * "AAAA" (ano) ou vazio (a definir). A precisão sai do formato digitado.
+     * @return array{date:?string,precision:string}|false
+     */
+    public static function parseEventDate(string $input): array|false
+    {
+        $v = trim($input);
+        if ($v === '') {
+            return ['date' => null, 'precision' => 'unknown'];
+        }
+        if (preg_match('#^(\d{1,2})/(\d{1,2})/(\d{4})$#', $v, $m)) {
+            [$d, $mo, $y, $precision] = [(int) $m[1], (int) $m[2], (int) $m[3], 'day'];
+        } elseif (preg_match('#^(\d{1,2})/(\d{4})$#', $v, $m)) {
+            [$d, $mo, $y, $precision] = [1, (int) $m[1], (int) $m[2], 'month'];
+        } elseif (preg_match('#^\d{4}$#', $v)) {
+            [$d, $mo, $y, $precision] = [1, 1, (int) $v, 'year'];
+        } else {
+            return false;
+        }
+        if ($y < 2000 || $y > 2100 || !checkdate($mo, $d, $y)) {
+            return false;
+        }
+        return ['date' => sprintf('%04d-%02d-%02d', $y, $mo, $d), 'precision' => $precision];
+    }
+
+    /** Inverso de parseEventDate(), para preencher o formulário. */
+    public static function eventDateInput(?string $date, string $precision): string
+    {
+        $d = $date !== null ? DateTimeImmutable::createFromFormat('!Y-m-d', $date) : false;
+        if ($d === false) {
+            return '';
+        }
+        return match ($precision) {
+            'day' => $d->format('d/m/Y'),
+            'month' => $d->format('m/Y'),
+            'year' => $d->format('Y'),
+            default => '',
+        };
+    }
+
     public static function date(?string $date): string
     {
         $d = $date !== null ? DateTimeImmutable::createFromFormat('!Y-m-d', substr($date, 0, 10)) : false;
