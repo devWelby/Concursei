@@ -57,6 +57,10 @@ final class BootGuard
             if ($config->string('database.password') === '' || $config->string('database.username') === 'root') {
                 $problems[] = 'Credencial de banco ausente ou usuário root (use usuário com privilégio mínimo).';
             }
+            // Privacidade e termos precisam identificar o responsável e o canal de contato (LGPD art. 9º e 41).
+            if (trim($config->string('app.operator_name')) === '' || filter_var(trim($config->string('app.contact_email')), FILTER_VALIDATE_EMAIL) === false) {
+                $problems[] = 'OPERATOR_NAME e CONTACT_EMAIL (e-mail válido) são obrigatórios em produção: aparecem em privacidade, termos e correções.';
+            }
             if ($documentRoot !== null && $documentRoot !== '') {
                 $doc = realpath($documentRoot) ?: $documentRoot;
                 $priv = realpath($basePath) ?: $basePath;

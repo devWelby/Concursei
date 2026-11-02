@@ -14,5 +14,6 @@ return [
     require __DIR__ . '/Modules/Catalog/module.php',
     require __DIR__ . '/Modules/Sources/module.php',
     require __DIR__ . '/Modules/Extraction/module.php',
+    require __DIR__ . '/Modules/Pages/module.php',
     require __DIR__ . '/Modules/Home/module.php',
 ];

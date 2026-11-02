@@ -168,6 +168,9 @@ th, td { text-align: left; padding: .5rem; border-bottom: 1px solid var(--c-bord
 form.card { margin-bottom: var(--space); }
 .source-note { font-size: .9rem; color: var(--c-muted); }
 .document-text { white-space: pre-wrap; word-break: break-word; max-height: 70vh; overflow: auto; background: var(--c-surface); border: 1px solid var(--c-border); border-radius: var(--radius); padding: var(--space); font-size: .9rem; }
+.prose { max-width: 46rem; }
+.prose h2 { margin-top: 2rem; }
+.prose li + li { margin-top: .35rem; }
 .evidence { margin: 0; padding-left: .75rem; border-left: 3px solid var(--c-border); font-size: .9rem; word-break: break-word; }
 .issues { margin: .25rem 0 0; padding-left: 1.1rem; color: var(--c-error); font-size: .9rem; }
 .proposal td { vertical-align: top; }
