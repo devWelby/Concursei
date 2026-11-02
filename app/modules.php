@@ -8,6 +8,7 @@ declare(strict_types=1);
  */
 return [
     require __DIR__ . '/Modules/Jobs/module.php',
+    require __DIR__ . '/Modules/Ai/module.php',
     require __DIR__ . '/Modules/Mail/module.php',
     require __DIR__ . '/Modules/Auth/module.php',
     require __DIR__ . '/Modules/Catalog/module.php',

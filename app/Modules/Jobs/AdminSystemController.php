@@ -11,6 +11,7 @@ use Concursei\Core\Http\Request;
 use Concursei\Core\Http\Response;
 use Concursei\Core\Session\Session;
 use Concursei\Core\View\View;
+use Concursei\Modules\Ai\AiGateway;
 use Concursei\Shared\Audit\AuditLog;
 use Concursei\Shared\Auth\AuthUser;
 
@@ -24,6 +25,7 @@ final class AdminSystemController extends Controller
         private Session $session,
         private AuditLog $audit,
         private Clock $clock,
+        private AiGateway $ai,
     ) {
         parent::__construct($view);
     }
@@ -38,6 +40,7 @@ final class AdminSystemController extends Controller
             'failed' => $this->queue->recent('failed', 30),
             'waiting' => array_merge($this->queue->recent('retry_scheduled', 20), $this->queue->recent('pending', 20)),
             'now' => $this->clock->now(),
+            'ai' => $this->ai->status(),
         ]);
     }
 
